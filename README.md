@@ -37,19 +37,32 @@ bash /tmp/stage
    browser you are already signed into.
 3. Copies `nnn` out of the bucket into `~/bin` and runs it, which fetches
    everything else.
+4. Replaces the tarball with the apt-managed `google-cloud-cli` in `/usr/bin`,
+   then deletes `~/google-cloud-sdk`.
 
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
 
-## Why gcloud goes in $HOME and not on PATH
+## Why gcloud is installed twice
 
-The tarball install is deliberately never added to `PATH`. It exists only to
-read the bucket once. Whatever your `.bashrc` sets up afterwards is free to
-install the apt-managed `gcloud` into `/usr/bin` without conflict.
+The tarball is the only kind of `gcloud` a bare container can install: no sudo,
+no keyring, no apt repo to add — and adding one needs `gnupg`, which may not be
+there yet either. It exists to read the bucket once, and is deliberately never
+added to `PATH`.
 
-Credentials live in `~/.config/gcloud` and are shared by both copies, so you
-log in exactly once. Remove the bootstrap copy with `rm -rf ~/google-cloud-sdk`
-once the real one is in place.
+It is not the copy you want to keep. Step 4 adds Google's apt repo and installs
+`google-cloud-cli` into `/usr/bin`, which is what everything downstream expects
+and what gets updated along with the rest of the machine, and then removes
+`~/google-cloud-sdk`. This used to be left to the `bootstrap` function in the
+fetched `.bashrc`; `stage` now does it, so `bootstrap`'s `gcloud` stage finds
+the CLI already in place and does nothing.
+
+Step 4 is non-fatal. Without `sudo`, or with apt unreachable, it warns, keeps
+the tarball and leaves the job to `bootstrap gcloud`.
+
+Credentials live in `~/.config/gcloud`, a separate directory shared by both
+copies, so you log in exactly once and removing the tarball does not log you
+out.
 
 ## Bucket
 

@@ -29,7 +29,39 @@ curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage -o /
 bash /tmp/stage
 ```
 
+## Full sequence
+
+`stage` leaves you with a container that can read the bucket. Four commands
+take it the rest of the way:
+
+```sh
+bash <(curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage)
+exec bash -l
+bootstrap
+bootstrap code
+```
+
+- **`stage`** — gcloud, login, then `~/bin` and the dotfiles out of the bucket.
+- **`exec bash -l`** — load-bearing, and easy to skip. `bootstrap` is a shell
+  function defined in the `.bashrc` that `stage` has just fetched, so it does
+  not exist until a new login shell reads it.
+- **`bootstrap`** — apt packages, node, python, rust, go, docker, aws and the
+  agent CLIs. Every stage is idempotent, so re-running is how you repair one
+  that failed; `bootstrap <stage>` runs a single one and `bootstrap -l` lists
+  them. The python stage compiles CPython and is slow.
+- **`bootstrap code`** — clones the repos. Kept out of the default set because
+  it takes a while.
+
+Two things then need the steps above to have finished:
+
+- **Log out and back in.** The docker stage adds you to the `docker` group,
+  which a session that is already running will not pick up.
+- **Re-run `nnn`.** A couple of the scripts in `~/bin` are symlinks into a
+  cloned repo rather than copies from the bucket, so they cannot be linked
+  until `bootstrap code` has cloned it. `nnn` warns and skips them until then.
+
 ## What it does
+
 
 1. Installs the Google Cloud CLI from the tarball into `$HOME` — **no sudo,
    no apt, no keyring setup**.

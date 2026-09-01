@@ -10,12 +10,24 @@ fetchable without credentials, so it lives here instead of in the bucket.
 ## Use
 
 ```sh
+bash <(curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage) gs://your-bucket
+```
+
+No `git` required — `curl` is enough, so there is nothing to `apt-get install`
+first.
+
+Process substitution rather than a pipe is deliberate. `curl ... | bash` hands
+the script to bash on **stdin**, which is the same stdin `gcloud auth login`
+needs to read your answers from; the login then fails or silently eats the rest
+of the script. `bash <(curl ...)` passes it as a file descriptor instead and
+leaves stdin attached to your terminal.
+
+If your shell has no process substitution, download and run in two steps:
+
+```sh
 curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage -o /tmp/stage
 bash /tmp/stage gs://your-bucket
 ```
-
-No `git` required — `curl` is enough. Don't pipe straight into `bash`: the
-script runs `gcloud auth login`, which needs stdin.
 
 ## What it does
 

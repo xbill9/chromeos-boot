@@ -1,0 +1,46 @@
+# chromeos-boot
+
+Bring a fresh ChromeOS Linux (Crostini) container up from nothing, when the
+things you want to install live in a **private** Cloud Storage bucket.
+
+That is a chicken-and-egg problem: reading the bucket needs `gcloud`, and a
+bare container has no `gcloud`. This script is the one piece that has to be
+fetchable without credentials, so it lives here instead of in the bucket.
+
+## Use
+
+```sh
+curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage -o /tmp/stage
+bash /tmp/stage gs://your-bucket
+```
+
+No `git` required — `curl` is enough. Don't pipe straight into `bash`: the
+script runs `gcloud auth login`, which needs stdin.
+
+## What it does
+
+1. Installs the Google Cloud CLI from the tarball into `$HOME` — **no sudo,
+   no apt, no keyring setup**.
+2. Logs you in, opening a browser tab. Crostini hands the URL to the ChromeOS
+   browser you are already signed into.
+3. Copies `nnn` out of the bucket into `~/bin` and runs it, which fetches
+   everything else.
+
+It is idempotent: existing `gcloud` and an active login are detected and
+skipped, so re-run it to repair a half-finished container.
+
+## Why gcloud goes in $HOME and not on PATH
+
+The tarball install is deliberately never added to `PATH`. It exists only to
+read the bucket once. Whatever your `.bashrc` sets up afterwards is free to
+install the apt-managed `gcloud` into `/usr/bin` without conflict.
+
+Credentials live in `~/.config/gcloud` and are shared by both copies, so you
+log in exactly once. Remove the bootstrap copy with `rm -rf ~/google-cloud-sdk`
+once the real one is in place.
+
+## Bucket argument
+
+The bucket is an argument rather than a hardcoded default, so this repo can be
+public without naming private infrastructure. `BUCKET=gs://... bash stage`
+works too.

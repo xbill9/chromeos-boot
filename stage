@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Stage a fresh Chromebook (Crostini) container from nothing.
+#
+# This is the one piece that cannot live in the stage bucket, because the
+# bucket is private and needs gcloud to read it -- and on a fresh container
+# gcloud does not exist yet.  Keep a copy somewhere reachable without
+# credentials (an unlisted Drive file, or a mail to yourself) and paste it
+# in.  Everything after this script comes from the bucket.
+#
+# usage: bash stage <gs://bucket>          (or: BUCKET=gs://... bash stage)
+#
+# The bucket is an argument rather than a default so that this script can
+# live in a public repo without naming private infrastructure.
+#
+# Idempotent: re-run it to repair a half-finished container.
+#
+# gcloud is installed from the tarball into $HOME rather than from apt, so
+# this needs no sudo and no keyring setup.  It is deliberately NOT put on
+# PATH: the bootstrap function in the .bashrc this script fetches installs
+# the apt-managed gcloud into /usr/bin, which is what the rest of the setup
+# expects.  Credentials live in ~/.config/gcloud and are shared by both, so
+# you only ever log in once.
+
+bucket=${1:-$BUCKET}
+sdk=$HOME/google-cloud-sdk
+gcloud=$sdk/bin/gcloud
+
+log()  { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
+die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
+
+case $bucket in
+  gs://*) ;;
+  "")     die "no bucket given -- usage: bash stage <gs://bucket>" ;;
+  *)      die "$bucket: expected a gs:// URL" ;;
+esac
+
+# --- gcloud ---------------------------------------------------------------
+if command -v gcloud >/dev/null 2>&1 ; then
+  gcloud=`command -v gcloud`
+  log "gcloud: already on PATH -- `$gcloud version 2>/dev/null | head -1`"
+elif [ -x "$gcloud" ] ; then
+  log "gcloud: already installed at $sdk"
+else
+  log "gcloud: installing to $sdk (no sudo required)"
+  tmp=`mktemp -t gcloud-install.XXXXXX` || die "cannot create temp file"
+  trap 'rm -f "$tmp"' EXIT
+  curl -sSL https://sdk.cloud.google.com > "$tmp" || die "cannot download installer"
+  [ -s "$tmp" ] || die "installer downloaded empty"
+  bash "$tmp" --disable-prompts --install-dir="$HOME" || die "gcloud install failed"
+  rm -f "$tmp"
+  trap - EXIT
+  [ -x "$gcloud" ] || die "gcloud not found at $gcloud after install"
+fi
+
+# --- credentials ----------------------------------------------------------
+# Opens a browser tab.  Crostini hands the URL to the ChromeOS browser, which
+# is already signed in, so this is usually two clicks.
+if "$gcloud" auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null | grep -q . ; then
+  log "auth: active as `"$gcloud" auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null | head -1`"
+else
+  log "auth: no active account -- opening browser login"
+  "$gcloud" auth login || die "gcloud auth login failed"
+fi
+
+# --- nnn ------------------------------------------------------------------
+log "nnn: seeding ~/bin from the stage bucket"
+mkdir -p "$HOME/bin" || die "cannot create $HOME/bin"
+"$gcloud" storage cp "$bucket/nnn" "$HOME/bin/nnn" || die "cannot fetch nnn (no access to $bucket?)"
+chmod 755 "$HOME/bin/nnn" || die "cannot chmod nnn"
+
+# nnn needs gcloud on PATH; the tarball copy is not on it by design.
+log "nnn: fetching scripts and dotfiles (a couple of minutes)"
+PATH="`dirname "$gcloud"`:$PATH" "$HOME/bin/nnn" || die "nnn failed"
+
+cat <<'DONE'
+
+  Staged.  Two commands left:
+
+      exec bash -l      pick up the new ~/.bashrc, which defines `bootstrap`
+      bootstrap         apt, gcloud, node, python, rust, go, docker, aws, agents
+
+  Then `bootstrap code` for the repos, and log out and back in once for the
+  docker group.  Re-run `nnn` after `bootstrap code` to link make-resume and
+  md2docx.py, which point into ~/resume.
+
+DONE

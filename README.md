@@ -10,7 +10,7 @@ fetchable without credentials, so it lives here instead of in the bucket.
 ## Use
 
 ```sh
-bash <(curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage) gs://your-bucket
+bash <(curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage)
 ```
 
 No `git` required — `curl` is enough, so there is nothing to `apt-get install`
@@ -26,7 +26,7 @@ If your shell has no process substitution, download and run in two steps:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage -o /tmp/stage
-bash /tmp/stage gs://your-bucket
+bash /tmp/stage
 ```
 
 ## What it does
@@ -51,8 +51,9 @@ Credentials live in `~/.config/gcloud` and are shared by both copies, so you
 log in exactly once. Remove the bootstrap copy with `rm -rf ~/google-cloud-sdk`
 once the real one is in place.
 
-## Bucket argument
+## Bucket
 
-The bucket is an argument rather than a hardcoded default, so this repo can be
-public without naming private infrastructure. `BUCKET=gs://... bash stage`
-works too.
+Defaults to the stage bucket; pass another as the first argument, or set
+`BUCKET`. The name is not sensitive - the bucket is private and IAM gates every
+object in it, so knowing the name gets you nothing without an authorised
+account. Step 2 is what establishes that.

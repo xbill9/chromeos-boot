@@ -191,8 +191,13 @@ wallpaper and the keybindings are live immediately.
   copy carrying `NoDisplay=true` — a copy, not a stub, so MIME associations
   and "Open with" still work. Nothing is uninstalled. GNOME Text Editor is
   renamed to "Text".
-- **`look`** — Roboto as the UI/document/titlebar font, blue accent, no hot
-  corners, time-only clock, one workspace, shelf favourites.
+- **`look`** — Roboto as the UI/document/titlebar font, text scaled to 1.2×,
+  blue accent, no hot corners, time-only clock, one workspace, shelf
+  favourites. The text scale is what makes **Chrome** readable: Chrome turns
+  GNOME's `text-scaling-factor` into `Xft.dpi` and uses it as its device scale
+  factor, so it is the only setting that enlarges the browser UI — tabs,
+  omnibox, menus — rather than just page text. Set `TEXT_SCALE=1.0` to leave
+  the size alone, or higher on a denser panel.
 - **`keys`** — Caps Lock becomes Super (the ChromeOS Launcher key); Alt for
   window minimise/maximise/tile; Alt+Tab cycles windows (not app groups, which
   move to Super+Tab); Super+[ / Super+] switch workspaces; Ctrl+F5 overview;

@@ -54,6 +54,10 @@ EXTDIR=$HOME/.local/share/gnome-shell/extensions/$D2P
 ADW_VERSION=${ADW_VERSION:-v6.5}
 PAPIRUS_URL=${PAPIRUS_URL:-https://github.com/PapirusDevelopmentTeam/papirus-icon-theme/archive/refs/heads/master.tar.gz}
 
+# How much to enlarge text desktop-wide.  1.0 is the GNOME default and is what
+# a machine with a sane DPI wants; set TEXT_SCALE=1.0 to leave the size alone.
+TEXT_SCALE=${TEXT_SCALE:-1.2}
+
 # --- argument handling ----------------------------------------------------
 for a in "$@" ; do
   case $a in
@@ -435,6 +439,14 @@ stage_look() {
     warn "Roboto not installed -- \`sudo apt install fonts-roboto\`, then \`bash flex look\`"
   fi
 
+  # 1080p on a 15" panel is ~143 DPI, but GNOME drives it as though it were 96,
+  # so everything lands at about two thirds of its intended physical size.  This
+  # is also the only knob that enlarges Chrome's own UI -- tabs, omnibox, menus:
+  # Chrome turns it into Xft.dpi and uses that as its device scale factor.  Its
+  # built-in font-size setting reaches page text and nothing else.
+  gsettings set org.gnome.desktop.interface text-scaling-factor "$TEXT_SCALE"
+  step "text scaled to ${TEXT_SCALE}x (Chrome's UI follows this, not its own font setting)"
+
   gsettings set org.gnome.desktop.interface accent-color 'blue'
   gsettings set org.gnome.desktop.interface enable-hot-corners false   # ChromeOS has none
   gsettings set org.gnome.desktop.interface clock-show-date false      # the shelf shows time only
@@ -782,7 +794,7 @@ do_revert() {
   # Reset, not restore: these go back to the GNOME defaults, which is not
   # necessarily what you had before running this.
   for s in \
-    "org.gnome.desktop.interface color-scheme gtk-theme icon-theme font-name document-font-name accent-color clock-show-date enable-hot-corners" \
+    "org.gnome.desktop.interface color-scheme gtk-theme icon-theme font-name document-font-name text-scaling-factor accent-color clock-show-date enable-hot-corners" \
     "org.gnome.desktop.wm.preferences button-layout titlebar-font num-workspaces" \
     "org.gnome.desktop.wm.keybindings minimize toggle-maximized switch-windows switch-windows-backward switch-applications switch-applications-backward switch-to-workspace-left switch-to-workspace-right" \
     "org.gnome.mutter dynamic-workspaces workspaces-only-on-primary" \

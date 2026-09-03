@@ -1,13 +1,22 @@
 # chromeos-boot
 
-Bring a fresh ChromeOS Linux (Crostini) container up from nothing, when the
-things you want to install live in a **private** Cloud Storage bucket.
+Two unrelated scripts that share a name because they share a theme: getting a
+Linux box to behave like a Chromebook.
+
+- **`stage`** — bring a fresh ChromeOS Linux (Crostini) *container* up from
+  nothing, when the things you want to install live in a **private** Cloud
+  Storage bucket.
+- **`flex`** — turn a stock Debian *desktop* into a ChromeOS Flex lookalike:
+  shelf, web apps, keybindings, wallpaper. No bucket, no gcloud, nothing
+  private — this one is standalone.
+
+## stage
 
 That is a chicken-and-egg problem: reading the bucket needs `gcloud`, and a
 bare container has no `gcloud`. This script is the one piece that has to be
 fetchable without credentials, so it lives here instead of in the bucket.
 
-## Use
+### Use
 
 ```sh
 bash <(curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage)
@@ -29,7 +38,7 @@ curl -sSL https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage -o /
 bash /tmp/stage
 ```
 
-## Full sequence
+### Full sequence
 
 `stage` leaves you with a container that can read the bucket. Four commands
 take it the rest of the way:
@@ -60,7 +69,7 @@ Two things then need the steps above to have finished:
   cloned repo rather than copies from the bucket, so they cannot be linked
   until `bootstrap code` has cloned it. `nnn` warns and skips them until then.
 
-## What it does
+### What it does
 
 
 1. Installs the Google Cloud CLI from the tarball into `$HOME` — **no sudo,
@@ -75,7 +84,7 @@ Two things then need the steps above to have finished:
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
 
-## Why gcloud is installed twice
+### Why gcloud is installed twice
 
 The tarball is the only kind of `gcloud` a bare container can install: no sudo,
 no keyring, no apt repo to add — and adding one needs `gnupg`, which may not be
@@ -96,9 +105,96 @@ Credentials live in `~/.config/gcloud`, a separate directory shared by both
 copies, so you log in exactly once and removing the tarball does not log you
 out.
 
-## Bucket
+### Bucket
 
 Defaults to the stage bucket; pass another as the first argument, or set
 `BUCKET`. The name is not sensitive - the bucket is private and IAM gates every
 object in it, so knowing the name gets you nothing without an authorised
 account. Step 2 is what establishes that.
+
+## flex
+
+Turn a stock Debian 13 (trixie) / GNOME 48 desktop into a ChromeOS Flex
+lookalike: a bottom shelf, the Google web apps as first-class icons, ChromeOS
+keybindings, a pruned app grid, and a matching pair of wallpapers. Written
+from — and matches — the customisation actually run on this Yoga 9 install.
+
+Unlike `stage`, this one is self-contained: no bucket, no gcloud, nothing
+private. Everything it touches lives under `$HOME` except the `pkgs` stage
+(apt, and non-fatal without sudo) and `boot-splash.sh`, a script it installs
+but never runs, since that one edits GRUB.
+
+### Use
+
+```sh
+bash flex              # everything, dark mode
+bash flex --light      # everything, light mode
+bash flex -l           # list the stages
+bash flex shelf webapps   # just those two
+bash flex revert       # undo it
+```
+
+Every stage is idempotent, so re-running is how you repair one that failed,
+and naming a stage is how you repair it without redoing the rest. `icons`
+(a ~60MB icon theme) and `wallpaper` (~9s per render) are the slow ones.
+
+Wayland cannot restart `gnome-shell` in place, so the shelf, the GTK theme
+and the app grid only take effect after a full log out and back in; the
+wallpaper and the keybindings are live immediately.
+
+### Stages
+
+- **`pkgs`** — Roboto, gnome-tweaks, unzip, and Chrome if no Chromium-family
+  browser is already installed.
+- **`theme`** — adw-gtk3, light and dark, from the upstream release tarball
+  (trixie has no package for it), so GTK3 apps match the libadwaita GTK4 ones.
+- **`icons`** — Papirus and Papirus-Dark, user-level.
+- **`shelf`** — installs dash-to-panel in place of the packaged dash-to-dock:
+  only dash-to-panel merges the taskbar and system tray into one bar, which is
+  what the ChromeOS shelf is. Bottom, 56px, 75% opacity, Google-Blue
+  running-app dots, Alt+1-9 launches the nth pinned app. The per-monitor
+  layout is resolved through Mutter's `DisplayConfig` at run time rather than
+  a hardcoded panel ID, so it isn't tied to one laptop's monitor.
+- **`webapps`** — the nine Google apps (Gmail, Calendar, Drive, Docs, Sheets,
+  Keep, Photos, Maps, YouTube) as windowless `--app=` launchers with their own
+  shelf icons, icons fetched from gstatic with a favicon-service fallback.
+- **`appgrid`** — hides the apps ChromeOS doesn't have (LibreOffice, xterm,
+  Disk Utility, and 30-odd others) by shadowing each system `.desktop` with a
+  copy carrying `NoDisplay=true` — a copy, not a stub, so MIME associations
+  and "Open with" still work. Nothing is uninstalled. GNOME Text Editor is
+  renamed to "Text".
+- **`look`** — Roboto as the UI/document/titlebar font, blue accent, no hot
+  corners, time-only clock, one workspace, shelf favourites.
+- **`keys`** — Caps Lock becomes Super (the ChromeOS Launcher key); Alt for
+  window minimise/maximise/tile; Alt+Tab cycles windows (not app groups, which
+  move to Super+Tab); Super+[ / Super+] switch workspaces; Ctrl+F5 overview;
+  Ctrl+Shift+F5 screenshot; Ctrl+Shift+Q sign out; Ctrl+Alt+T terminal.
+- **`helpers`** — installs `set-mode.sh`, `gen_wallpaper.py` and
+  `boot-splash.sh` under `~/.local/share/chromeos-flex/`.
+- **`wallpaper`** — renders both wallpaper variants (pure-Python PNG encoder,
+  no Pillow needed) and applies the requested mode.
+
+### After it runs
+
+```sh
+~/.local/share/chromeos-flex/set-mode.sh light   # flip the whole look
+~/.local/share/chromeos-flex/set-mode.sh         # report the current mode
+```
+
+Two things it can't do for you, both a couple of clicks in Settings:
+mounting Drive in the Files app (Settings → Online Accounts → Google), and
+Chrome reopening its tabs on launch (Chrome Settings → On startup). The
+latter has a managed-policy route, deliberately not taken here — it stamps
+"Managed by your organization" onto the Chrome menu permanently in exchange
+for skipping one five-second click.
+
+`boot-splash.sh`, also under `~/.local/share/chromeos-flex/`, is installed
+but never run automatically: it edits `/etc/default/grub` to drop the GRUB
+menu and enable the Plymouth splash that ships already installed. Needs
+root; read it before running it.
+
+`bash flex revert` resets every setting this script touched back to the
+GNOME defaults (not to whatever they were before — this doesn't snapshot
+prior values) and removes the launchers, icons, wallpapers and helper
+scripts it created. adw-gtk3, Papirus, dash-to-panel and any apt packages
+are left in place, since removing them isn't really an "undo" either.

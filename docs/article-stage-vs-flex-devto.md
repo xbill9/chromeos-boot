@@ -3,7 +3,7 @@ title: "ChromeOS Lookalikes, Two Ways: One With Drivers, One Without"
 published: false
 description: "chromeos-boot holds two unrelated scripts under one name: stage seeds a real Crostini container from a private bucket, flex skins a bare-metal Debian desktop to look like one. The split exists because Crostini's guest kernel can't load the NVIDIA driver."
 tags: chromeos, linux, debian, gnome
-cover_image: https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/cover-stage-vs-flex.da9dad60.jpg
+cover_image: https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/cover-stage-vs-flex.d4cc7b48.jpg
 ---
 
 This article covers two scripts that live in the same repository for the same underlying reason — getting a Linux box to behave like a Chromebook — and that end up doing almost nothing alike, because they solve that problem for two different machines.

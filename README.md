@@ -124,6 +124,13 @@ private. Everything it touches lives under `$HOME` except the `pkgs` stage
 (apt, and non-fatal without sudo) and `boot-splash.sh`, a script it installs
 but never runs, since that one edits GRUB.
 
+It also feels quicker than the ChromeOS Flex it imitates, though that is an
+impression from daily use and not a measurement. There is a plausible reason
+for it: this is GNOME on bare Debian, so nothing pays for Flex's session
+model — the browser is an application rather than the shell itself, and local
+apps run on the machine instead of behind Crostini's VM. What `flex` copies
+is the layout, not the platform underneath it.
+
 ### Display manager
 
 Install GNOME with **gdm3** — the Debian installer's default desktop task

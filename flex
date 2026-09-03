@@ -258,7 +258,11 @@ stage_shelf() {
   d2p trans-use-dynamic-opacity false
   d2p trans-panel-opacity 0.75
 
-  # Layout: launcher hard left, then the taskbar; clock and tray hard right.
+  # Layout: launcher hard left, clock and tray hard right, and the app icons
+  # centred between them -- which is what ChromeOS does.  "centerMonitor" is
+  # the monitor's true midpoint; plain "centered" would centre in the gap
+  # left by the two stacked groups, and the tray is wider than the launcher,
+  # so that sits visibly right of centre.
   # These three keys are JSON maps keyed by *monitor*, not plain values, and
   # the key is the monitor's EDID vendor and serial (eg "BOE-0x00000000") --
   # machine-specific, so ask Mutter what this machine has rather than baking
@@ -279,7 +283,7 @@ for c,v,p,s in re.findall(r"\(\(\x27([^\x27]*)\x27, \x27([^\x27]*)\x27, \x27([^\
 import json,sys
 ids=[l.strip() for l in sys.stdin if l.strip()]
 elements=[("showAppsButton",True,"stackedTL"),("activitiesButton",False,"stackedTL"),
-          ("leftBox",False,"stackedTL"),("taskbar",True,"stackedTL"),
+          ("leftBox",False,"stackedTL"),("taskbar",True,"centerMonitor"),
           ("centerBox",False,"stackedBR"),("rightBox",True,"stackedBR"),
           ("dateMenu",True,"stackedBR"),("systemMenu",True,"stackedBR"),
           ("desktopButton",False,"stackedBR")]
@@ -294,7 +298,7 @@ print(enc({i:layout for i in ids}))
       d2p panel-positions "$1"
       d2p panel-sizes "$2"
       d2p panel-element-positions "$3"
-      step "shelf pinned bottom, 56px, on: `printf '%s' "$ids" | tr '\n' ' '`"
+      step "shelf pinned bottom, 56px, icons centred, on: `printf '%s' "$ids" | tr '\n' ' '`"
     else
       warn "could not build the per-monitor layout -- the global 56px bottom panel still applies"
     fi

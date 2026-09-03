@@ -168,9 +168,13 @@ wallpaper and the keybindings are live immediately.
 - **`shelf`** — installs dash-to-panel in place of the packaged dash-to-dock:
   only dash-to-panel merges the taskbar and system tray into one bar, which is
   what the ChromeOS shelf is. Bottom, 56px, 75% opacity, Google-Blue
-  running-app dots, Alt+1-9 launches the nth pinned app. The per-monitor
-  layout is resolved through Mutter's `DisplayConfig` at run time rather than
-  a hardcoded panel ID, so it isn't tied to one laptop's monitor.
+  running-app dots, Alt+1-9 launches the nth pinned app. App icons are
+  centred on the monitor with the launcher hard left and the clock and tray
+  hard right, as on ChromeOS. The per-monitor layout is resolved through
+  Mutter's `DisplayConfig` at run time rather than a hardcoded panel ID, so it
+  isn't tied to one laptop's monitor — but a monitor this stage has never seen
+  falls back to dash-to-panel's own left-stacked default, so plug the second
+  screen in first and re-run `bash flex shelf`.
 - **`webapps`** — the nine Google apps (Gmail, Calendar, Drive, Docs, Sheets,
   Keep, Photos, Maps, YouTube) as windowless `--app=` launchers with their own
   shelf icons, icons fetched from gstatic with a favicon-service fallback.

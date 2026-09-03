@@ -1,0 +1,12 @@
+ChromeOS Lookalikes, Two Ways: One With Drivers, One Without
+
+chromeos-boot holds two unrelated scripts under one name: stage seeds a real Crostini container from a private bucket, flex skins a bare-metal Debian desktop to look like one. The split exists because Crostini's guest kernel can't load the NVIDIA driver.
+
+What is in it:
+
+- stage — brings a fresh ChromeOS Linux \(Crostini\) container up from nothing, when everything else it needs lives in a private Cloud Storage bucket.
+- flex — turns a stock Debian desktop into a ChromeOS Flex lookalike: shelf, web apps, keybindings, wallpaper. No bucket, no gcloud, nothing private.
+
+dev.to \(Google Developer Experts\): https://dev.to/gde/chromeos-lookalikes-two-ways-one-with-drivers-one-without-83m
+Medium: https://xbill999.medium.com/chromeos-lookalikes-two-ways-one-with-drivers-one-without-6ed3f1002c41
+Source: https://github.com/xbill9/chromeos-boot

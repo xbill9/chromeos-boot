@@ -1,0 +1,3 @@
+devto-gde = https://dev.to/gde/chromeos-lookalikes-two-ways-one-with-drivers-one-without-83m
+medium = https://xbill999.medium.com/chromeos-lookalikes-two-ways-one-with-drivers-one-without-6ed3f1002c41
+repo = https://github.com/xbill9/chromeos-boot

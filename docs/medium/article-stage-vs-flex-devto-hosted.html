@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ChromeOS Lookalikes, Two Ways: One With Drivers, One Without</title>
+  <meta name="description" content="chromeos-boot holds two unrelated scripts under one name: stage seeds a real Crostini container from a private bucket, flex skins a bare-metal Debian desktop to look like one. The split exists because Crostini&#x27;s guest kernel can&#x27;t load the NVIDIA driver." />
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    body{font-family:-apple-system,'Segoe UI',Roboto,'Liberation Sans',Arial,sans-serif;
+         font-size:18px;line-height:1.58;max-width:42em;color:#242424;}
+    h1,h2,h3,h4{font-weight:700;line-height:1.25;margin-top:1.8em;}
+    h4{font-size:1.25em;}
+    img{max-width:100%;height:auto;display:block;margin:1.6em 0;}
+    pre{background:#f7f7f7;border:1px solid #e6e6e6;border-radius:4px;
+        padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.45;}
+    code{font-family:'Liberation Mono',Menlo,Consolas,monospace;}
+    :not(pre)>code{background:#f2f2f2;padding:1px 5px;border-radius:3px;font-size:.9em;}
+    blockquote{border-left:3px solid #ddd;margin-left:0;padding-left:1em;color:#555;}
+    hr{border:0;border-top:1px solid #e6e6e6;margin:2.4em 0;}
+  </style>
+</head>
+<body>
+<figure><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/medium/img/cover-stage-vs-flex.d4cc7b48.jpg" alt="ChromeOS Lookalikes, Two Ways: One With Drivers, One Without" /></figure>
+<header id="title-block-header" hidden>
+<h1 class="title">ChromeOS Lookalikes, Two Ways: One With Drivers, One
+Without</h1>
+</header>
+<p>This article covers two scripts that live in the same repository for
+the same underlying reason — getting a Linux box to behave like a
+Chromebook — and that end up doing almost nothing alike, because they
+solve that problem for two different machines.</p>
+<p><a
+href="https://github.com/xbill9/chromeos-boot">https://github.com/xbill9/chromeos-boot</a></p>
+<h4 id="two-scripts-one-theme">Two Scripts, One Theme</h4>
+<p><code>chromeos-boot</code> is not one tool with two modes. It is two
+standalone scripts that happen to share a repo and a name:</p>
+<ul>
+<li><strong><code>stage</code></strong> — brings a fresh ChromeOS Linux
+(Crostini) <em>container</em> up from nothing, when everything else it
+needs lives in a private Cloud Storage bucket.</li>
+<li><strong><code>flex</code></strong> — turns a stock Debian
+<em>desktop</em> into a ChromeOS Flex lookalike: shelf, web apps,
+keybindings, wallpaper. No bucket, no gcloud, nothing private.</li>
+</ul>
+<p><code>stage</code> gets a machine to where it can read the bucket.
+<code>flex</code> makes a machine look like the thing it is imitating —
+and that word "imitating" only applies to one of them.
+<code>stage</code> runs inside an actual Crostini container, on actual
+ChromeOS; it has nothing to fake. <code>flex</code> runs on a desktop
+that gave up ChromeOS entirely, so everything about the look is
+manufactured. Two ChromeOS lookalikes, and only one of them is actually
+pretending.</p>
+<h4 id="why-two-not-one">Why Two, Not One</h4>
+<p>The reason there's a machine running <code>flex</code> at all is that
+Crostini's Linux environment cannot load the NVIDIA driver, and that's a
+kernel problem before it's a permissions one.</p>
+<p>Crostini's container doesn't run on the ChromeOS kernel directly.
+Enabling Linux spins up a lightweight VM (Termina) with its own guest
+kernel, one that Google builds, signs, and ships as part of the OS image
+— and your Debian container runs inside that VM, sharing its kernel
+rather than bringing one of its own. The NVIDIA driver isn't a userspace
+package; the installer's whole job is to compile <code>nvidia.ko</code>
+against the exact kernel that's running and load it with
+<code>insmod</code>. Termina's kernel has no headers shipped for that
+build, no writable path to drop a module into <code>/lib/modules</code>
+that survives the next ChromeOS update, and no interest in accepting an
+unsigned out-of-tree module on a kernel that's otherwise locked down by
+verified boot.</p>
+<p>Even past the module problem, there's no card to attach it to.
+Graphics inside Crostini go through virtio-gpu — the VM sees a
+paravirtualized display device good enough for compositing and
+OpenGL/Vulkan passthrough, not the raw PCI device a discrete GPU
+actually is. The NVIDIA driver wants to bind directly to that PCI
+device. Crostini never hands it one.</p>
+<p>So the fix was to stop going through ChromeOS for this at all: put
+Debian directly on the laptop's metal, where
+<code>apt install nvidia-driver</code> is building against a kernel you
+actually control, against a GPU that's actually visible on the PCI bus.
+That solves the driver problem and creates the one <code>flex</code>
+exists to solve — a stock Debian/GNOME desktop looks and behaves nothing
+like ChromeOS, and none of what came free inside Crostini comes free
+here. <code>flex</code> puts the shelf, the Google web apps, the
+keybindings, and the wallpaper back by hand.</p>
+<p><code>stage</code> and <code>flex</code> are answers to two different
+questions, not two takes on one. <code>stage</code> is what you run
+<em>because</em> you're still inside ChromeOS. <code>flex</code> is what
+you run <em>because</em> the kernel made you leave.</p>
+<h4 id="stage-staging-a-fresh-crostini-container">stage: Staging a Fresh
+Crostini Container</h4>
+<p><strong>At this point you should have</strong> a brand-new Crostini
+container — the default state after enabling Linux on a Chromebook — and
+nothing else. No <code>git</code>, no <code>gcloud</code>, nothing
+installed.</p>
+<p>That is a chicken-and-egg problem: reading the private bucket needs
+<code>gcloud</code>, and a bare container has no <code>gcloud</code>.
+<code>stage</code> is the one piece that has to be fetchable without
+credentials, so it is the only thing in this workflow that lives outside
+the bucket, pasted in or pulled straight from GitHub:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="op">&lt;(</span><span class="ex">curl</span> <span class="at">-sSL</span> https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage<span class="op">)</span></span></code></pre></div>
+<p>Process substitution rather than a pipe is deliberate.
+<code>curl ... | bash</code> hands the script to bash on
+<strong>stdin</strong>, which is the same stdin
+<code>gcloud auth login</code> needs to read answers from; the login
+then fails or silently eats the rest of the script.
+<code>bash &lt;(curl ...)</code> passes it as a file descriptor and
+leaves stdin attached to the terminal.</p>
+<p>What it does, in order:</p>
+<ol type="1">
+<li>Installs the Google Cloud CLI from the tarball into
+<code>$HOME</code> — no sudo, no apt, no keyring.</li>
+<li>Logs in, opening a browser tab. Crostini hands that URL to the
+ChromeOS browser, which is already signed in, so this is usually two
+clicks.</li>
+<li>Copies <code>nnn</code> out of the bucket into <code>~/bin</code>
+and runs it, which fetches everything else — scripts, dotfiles.</li>
+<li>Replaces the tarball with the apt-managed
+<code>google-cloud-cli</code> in <code>/usr/bin</code>, then deletes
+<code>~/google-cloud-sdk</code>.</li>
+</ol>
+<p>Step 1's tarball is not the copy meant to stick around — it exists
+only to read the bucket once, before apt is reachable. Step 4 swaps it
+for the package apt will keep current, and is non-fatal: without sudo,
+or with apt unreachable, <code>stage</code> warns and leaves the tarball
+in place rather than failing the run.</p>
+<p>Four commands finish the job, the last two coming from the
+<code>.bashrc</code> that step 3 just fetched:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="op">&lt;(</span><span class="ex">curl</span> <span class="at">-sSL</span> https://raw.githubusercontent.com/xbill9/chromeos-boot/main/stage<span class="op">)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> bash <span class="at">-l</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bootstrap</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">bootstrap</span> code</span></code></pre></div>
+<p><code>stage</code> never asks what kind of hardware it is running on,
+because it doesn't need to know. Everything it touches — the bucket,
+<code>gcloud</code>, the dotfiles — is the same regardless of the laptop
+underneath. That is the shape of a script solving a <em>credentials</em>
+problem, not a <em>hardware</em> one.</p>
+<h4 id="flex-skinning-a-stock-debian-desktop">flex: Skinning a Stock
+Debian Desktop</h4>
+<p><strong>At this point you should have</strong> Debian 13 (trixie)
+with GNOME 48, installed on real hardware — not a container.
+<code>flex</code> is written from, and matches, the customization
+actually run on a Yoga 9 with an NVIDIA GPU.</p>
+<pre class="console"><code>$ bash flex -l
+pkgs
+theme
+icons
+shelf
+webapps
+appgrid
+look
+keys
+helpers
+wallpaper</code></pre>
+<p>Ten stages, run in that order by default, or individually to repair
+one without redoing the rest:</p>
+<pre class="console"><code>$ bash flex -h
+
+Turn a stock Debian 13 (trixie) / GNOME 48 desktop into a ChromeOS Flex
+lookalike.
+
+Companion to `stage`.  `stage` gets a machine to where it can read the
+private bucket; `flex` makes the machine look like the thing it is imitating:
+a bottom shelf, the Google web apps as first-class icons, ChromeOS
+keybindings, a pruned app grid, and a matching pair of wallpapers.
+
+usage: bash flex [--light|--dark]        everything (dark unless told otherwise)
+       bash flex -l                      list the stages
+       bash flex &lt;stage&gt; [&lt;stage&gt;...]    run only those
+       bash flex revert                  undo it</code></pre>
+<p>Nothing here needs root except <code>pkgs</code> (apt, non-fatal
+without sudo), and everything it creates lives under
+<code>$HOME</code>.</p>
+<h4 id="the-ten-stages-briefly">The Ten Stages, Briefly</h4>
+<ul>
+<li><strong><code>pkgs</code></strong> — Roboto, gnome-tweaks, and
+Chrome if no Chromium-family browser is already there. The only stage
+that touches apt.</li>
+<li><strong><code>theme</code></strong> — adw-gtk3, light and dark, from
+the upstream tarball (trixie ships no package for it), so GTK3 apps
+match the libadwaita GTK4 ones.</li>
+<li><strong><code>icons</code></strong> — Papirus and Papirus-Dark,
+user-level. ~60MB, the slower of the two heavyweight stages.</li>
+<li><strong><code>shelf</code></strong> — installs dash-to-panel in
+place of the packaged dash-to-dock, because only dash-to-panel merges
+the taskbar and system tray into one bar — the ChromeOS shelf is one
+bar, not two. Bottom, 56px, 75% opacity, Google-Blue running-app dots,
+Alt+1–9 for the first nine pinned apps. The per-monitor layout is
+resolved through Mutter's <code>DisplayConfig</code> at run time rather
+than a hardcoded panel ID, so the same script works on a laptop panel
+and an external monitor without editing.</li>
+<li><strong><code>webapps</code></strong> — the nine Google apps (Gmail,
+Calendar, Drive, Docs, Sheets, Keep, Photos, Maps, YouTube) as
+windowless <code>--app=</code> launchers, each with its own shelf icon
+fetched from gstatic with a favicon-service fallback.</li>
+<li><strong><code>appgrid</code></strong> — hides the apps ChromeOS
+doesn't have (LibreOffice, xterm, Disk Utility, and 30-odd others) by
+shadowing each system <code>.desktop</code> file with a copy carrying
+<code>NoDisplay=true</code>. A copy, not a stub, so MIME associations
+and "Open with" keep working. Nothing is uninstalled.</li>
+<li><strong><code>look</code></strong> — Roboto as the
+UI/document/titlebar font, blue accent, no hot corners, time-only clock,
+one workspace, shelf favorites pinned.</li>
+<li><strong><code>keys</code></strong> — Caps Lock becomes Super, the
+ChromeOS Launcher key. Alt handles window minimize/maximize/tile;
+Alt+Tab cycles windows rather than app groups (which move to Super+Tab);
+Ctrl+F5 is overview; Ctrl+Shift+F5 is screenshot; Ctrl+Shift+Q signs
+out; Ctrl+Alt+T opens a terminal.</li>
+<li><strong><code>helpers</code></strong> — installs
+<code>set-mode.sh</code>, <code>gen_wallpaper.py</code>, and
+<code>boot-splash.sh</code> under
+<code>~/.local/share/chromeos-flex/</code>.</li>
+<li><strong><code>wallpaper</code></strong> — renders both wallpaper
+variants with a hand-rolled PNG encoder (no PIL, no numpy on a stock
+desktop) — a diagonal gradient, four Google-palette blobs with a
+quadratic falloff, and an ordered dither to stop a 2560px gradient
+banding.</li>
+</ul>
+<p>Wayland can't restart <code>gnome-shell</code> in place, so the
+shelf, the GTK theme, and the app grid only take effect after a full log
+out and back in. The wallpaper and the keybindings are live
+immediately.</p>
+<h4 id="flipping-light-and-dark-without-rerunning-everything">Flipping
+Light and Dark Without Rerunning Everything</h4>
+<p>The look is roughly fifteen <code>gsettings</code> calls that only
+make sense moving together — color scheme, GTK theme, icon theme, both
+wallpaper keys, the lock screen, and eight dash-to-panel colors.
+<code>helpers</code> installs <code>set-mode.sh</code> once so that
+switching modes afterward doesn't mean rerunning the whole script:</p>
+<pre class="console"><code>$ ~/.local/share/chromeos-flex/set-mode.sh light
+switched to light
+$ ~/.local/share/chromeos-flex/set-mode.sh
+current: &#39;prefer-light&#39;
+  gtk-theme  &#39;adw-gtk3&#39;
+  icon-theme &#39;Papirus&#39;
+  wallpaper  &#39;file:///home/xbill/.local/share/backgrounds/chromeos-element-light.png&#39;</code></pre>
+<h4 id="boot-splashsh-installed-not-run">boot-splash.sh: Installed, Not
+Run</h4>
+<p><code>helpers</code> writes one more file:
+<code>boot-splash.sh</code>, which edits <code>/etc/default/grub</code>
+to kill the boot menu and hand off to the Plymouth splash trixie already
+ships. <code>flex</code> drops it on disk and stops — it's the only
+piece of either script that touches the boot chain, it needs root, and
+GRUB is not something to hand to a stage list without reading it
+first.</p>
+<p>It's not really a speed fix. On the machine it was written for, boot
+ran about 44 seconds, and roughly 30 of that was firmware and the boot
+loader before GRUB even started — killing the GRUB timeout only claws
+back the last 5 seconds or so. What it actually buys is continuity: no
+text menu flashing past on the way to the desktop, same as an actual
+Chromebook.</p>
+<h4 id="where-theyre-alike">Where They're Alike</h4>
+<p>Different problems, same habits. Both scripts:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/medium/img/article-stage-vs-flex-devto-table-1.png"
+alt="table" /></p>
+<h4 id="where-they-differ">Where They Differ</h4>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/medium/img/article-stage-vs-flex-devto-table-2.png"
+alt="table" /></p>
+<h4 id="summary">Summary</h4>
+<p>The goal here was to get a real NVIDIA driver stack under a
+ChromeOS-shaped workflow, without giving up the parts of ChromeOS that
+make a laptop pleasant to use day to day. The key to the solution was
+accepting that this is two separate problems, not one script with a
+hardware flag: <code>stage</code> solves <em>getting credentials onto a
+machine that has none</em>, and <code>flex</code> solves <em>making a
+desktop look like ChromeOS after leaving ChromeOS entirely</em> — for
+the same underlying reason, on two different machines, sharing nothing
+but a repo and a theme.</p>
+<p>The strategy for making Linux look like ChromeOS — once inside a
+sandboxed container, once on the bare metal underneath it — was
+validated with an incremental, stage-by-stage approach on both
+sides.</p>
+</body>
+</html>

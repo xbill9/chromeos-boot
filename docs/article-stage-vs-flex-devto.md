@@ -1,7 +1,7 @@
 ---
-title: "stage vs flex: Two ChromeOS Look-Alikes, Split by an NVIDIA Driver"
+title: "stage vs flex: Two ChromeOS Lookalikes, One of Which Isn't"
 published: false
-description: "chromeos-boot holds two unrelated scripts under one name: stage seeds a Crostini container from a private bucket, flex skins a bare-metal Debian desktop as ChromeOS Flex. The split exists because Crostini can't reach an NVIDIA GPU."
+description: "chromeos-boot holds two unrelated scripts under one name: stage seeds a real Crostini container from a private bucket, flex skins a bare-metal Debian desktop to look like one. The split exists because Crostini's guest kernel can't load the NVIDIA driver."
 tags: chromeos, linux, debian, gnome
 cover_image: https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/cover-stage-vs-flex.da9dad60.jpg
 ---
@@ -17,15 +17,19 @@ https://github.com/xbill9/chromeos-boot
 - **`stage`** — brings a fresh ChromeOS Linux (Crostini) *container* up from nothing, when everything else it needs lives in a private Cloud Storage bucket.
 - **`flex`** — turns a stock Debian *desktop* into a ChromeOS Flex lookalike: shelf, web apps, keybindings, wallpaper. No bucket, no gcloud, nothing private.
 
-`stage` gets a machine to where it can read the bucket. `flex` makes a machine look like the thing it is imitating. Neither one calls the other, and neither one's code overlaps with the other's — but reading them side by side is the fastest way to see what each is actually trading off.
+`stage` gets a machine to where it can read the bucket. `flex` makes a machine look like the thing it is imitating — and that word "imitating" only applies to one of them. `stage` runs inside an actual Crostini container, on actual ChromeOS; it has nothing to fake. `flex` runs on a desktop that gave up ChromeOS entirely, so everything about the look is manufactured. Two ChromeOS lookalikes, and only one of them is actually pretending.
 
 #### Why Two, Not One
 
-The honest reason for the second script is hardware. Crostini's Linux environment is a container running inside ChromeOS — it never gets a real NVIDIA GPU, only whatever the host chooses to expose, which is not driver-level access. For anything that needs the actual card — CUDA, the proprietary driver stack, the kind of local GPU work this account's other articles run on rented cloud instances — Crostini is the wrong side of the sandbox wall.
+The reason there's a machine running `flex` at all is that Crostini's Linux environment cannot load the NVIDIA driver, and that's a kernel problem before it's a permissions one.
 
-The fix was to stop pretending: install Debian directly on the laptop and get a real NVIDIA driver. That solves the GPU problem and creates a new one — a stock Debian/GNOME desktop looks and behaves nothing like ChromeOS. `flex` exists to close that gap: it puts back the bottom shelf, the Google web apps, the keybindings, and the wallpaper that came for free inside actual ChromeOS, on top of an OS that now has to be told to look like one.
+Crostini's container doesn't run on the ChromeOS kernel directly. Enabling Linux spins up a lightweight VM (Termina) with its own guest kernel, one that Google builds, signs, and ships as part of the OS image — and your Debian container runs inside that VM, sharing its kernel rather than bringing one of its own. The NVIDIA driver isn't a userspace package; the installer's whole job is to compile `nvidia.ko` against the exact kernel that's running and load it with `insmod`. Termina's kernel has no headers shipped for that build, no writable path to drop a module into `/lib/modules` that survives the next ChromeOS update, and no interest in accepting an unsigned out-of-tree module on a kernel that's otherwise locked down by verified boot.
 
-So `stage` and `flex` are not two approaches to the same problem. `stage` is what you run *because* you're still inside ChromeOS. `flex` is what you run *because* you left it.
+Even past the module problem, there's no card to attach it to. Graphics inside Crostini go through virtio-gpu — the VM sees a paravirtualized display device good enough for compositing and OpenGL/Vulkan passthrough, not the raw PCI device a discrete GPU actually is. The NVIDIA driver wants to bind directly to that PCI device. Crostini never hands it one.
+
+So the fix was to stop going through ChromeOS for this at all: put Debian directly on the laptop's metal, where `apt install nvidia-driver` is building against a kernel you actually control, against a GPU that's actually visible on the PCI bus. That solves the driver problem and creates the one `flex` exists to solve — a stock Debian/GNOME desktop looks and behaves nothing like ChromeOS, and none of what came free inside Crostini comes free here. `flex` puts the shelf, the Google web apps, the keybindings, and the wallpaper back by hand.
+
+`stage` and `flex` are answers to two different questions, not two takes on one. `stage` is what you run *because* you're still inside ChromeOS. `flex` is what you run *because* the kernel made you leave.
 
 #### stage: Staging a Fresh Crostini Container
 
@@ -127,9 +131,11 @@ current: 'prefer-light'
   wallpaper  'file:///home/xbill/.local/share/backgrounds/chromeos-element-light.png'
 ```
 
-#### The Piece Deliberately Not Run
+#### boot-splash.sh: Installed, Not Run
 
-`helpers` also installs `boot-splash.sh` — a script that edits `/etc/default/grub` to drop the GRUB menu and hand boot over to the Plymouth splash trixie ships already installed. `flex` writes it to disk and stops there. It needs root, it is the only piece of either script that touches the boot chain, and it is meant to be read before it's run, not executed as part of a stage list. The saving is cosmetic, not a speed win — on the machine it was measured on, boot was 44 seconds, of which roughly 30 was firmware and loader; killing the GRUB timeout bought about 5 seconds of that, and the rest is the trade the script exists for: visual continuity into a splash screen instead of a text menu.
+`helpers` writes one more file: `boot-splash.sh`, which edits `/etc/default/grub` to kill the boot menu and hand off to the Plymouth splash trixie already ships. `flex` drops it on disk and stops — it's the only piece of either script that touches the boot chain, it needs root, and GRUB is not something to hand to a stage list without reading it first.
+
+It's not really a speed fix. On the machine it was written for, boot ran about 44 seconds, and roughly 30 of that was firmware and the boot loader before GRUB even started — killing the GRUB timeout only claws back the last 5 seconds or so. What it actually buys is continuity: no text menu flashing past on the way to the desktop, same as an actual Chromebook.
 
 #### Where They're Alike
 

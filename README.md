@@ -124,6 +124,22 @@ private. Everything it touches lives under `$HOME` except the `pkgs` stage
 (apt, and non-fatal without sudo) and `boot-splash.sh`, a script it installs
 but never runs, since that one edits GRUB.
 
+### Display manager
+
+Install GNOME with **gdm3** — the Debian installer's default desktop task
+gives you that; take it and change nothing. `flex` never touches the display
+manager, so this is not about anything it configures, it is about the session
+it lands you in, and the script only works in one: it dies without
+`gsettings`, warns unless `XDG_CURRENT_DESKTOP` is GNOME, and installs a
+gnome-shell extension for the shelf, reading `gnome-shell --version` to pick
+the build.
+
+lightdm is the wrong choice here. Debian's greeter only lists
+`/usr/share/xsessions`, so GNOME starts on Xorg rather than the Wayland
+session everything below was measured on, and it doesn't take the handoff
+from Plymouth cleanly, which is most of the point of `boot-splash.sh`. If a
+machine somehow ends up with both, `sudo dpkg-reconfigure gdm3` chooses.
+
 ### Use
 
 ```sh

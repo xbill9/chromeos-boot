@@ -308,11 +308,12 @@ print(enc({i:layout for i in ids}))
 }
 
 ##################################################################### webapps
-# The nine Google web apps, as launchers that open a Chrome app window with no
+# The ten Google web apps, as launchers that open a Chrome app window with no
 # tab strip and no omnibox -- which is what a ChromeOS "app" actually is.
 # --class is what gives each one its own shelf icon instead of all of them
 # stacking under Chrome; StartupWMClass is how GNOME matches the window back.
 WEBAPPS="gmail|Gmail|https://mail.google.com/mail/u/0/|gmail_2020q4_512dp
+chat|Chat|https://mail.google.com/chat/u/0/|chat_2020q4_512dp
 calendar|Calendar|https://calendar.google.com/calendar/r|calendar_2020q4_512dp
 drive|Drive|https://drive.google.com/drive/my-drive|drive_2020q4_512dp
 docs|Docs|https://docs.google.com/document/u/0/|docs_2020q4_512dp
@@ -323,7 +324,7 @@ maps|Maps|https://www.google.com/maps|maps_512dp
 youtube|YouTube|https://www.youtube.com/|youtube_512dp"
 
 stage_webapps() {
-  log "webapps: nine Google apps as launchers"
+  log "webapps: ten Google apps as launchers"
   if [ -z "$BROWSER" ] ; then
     warn "no Chromium-family browser -- skipping.  \`bash flex pkgs webapps\` once one is installed"
     return
@@ -447,13 +448,14 @@ stage_look() {
 
   gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view'
 
-  # The shelf, left to right.  Keep is installed but not pinned -- ten icons is
-  # already a full shelf, and Alt+1..8 only reaches the first eight.
+  # The shelf, left to right.  Keep is installed but not pinned -- the shelf is
+  # already full, and Alt+1..9 only reaches the first nine.
   bdesk=google-chrome.desktop
   [ -f /usr/share/applications/$bdesk ] || bdesk=$BROWSER.desktop
   term=org.gnome.Terminal.desktop
   [ -f /usr/share/applications/$term ] || term=""
-  favs="'$bdesk', 'chromeos-gmail.desktop', 'chromeos-calendar.desktop'"
+  favs="'$bdesk', 'chromeos-gmail.desktop', 'chromeos-chat.desktop'"
+  favs="$favs, 'chromeos-calendar.desktop'"
   [ -n "$term" ] && favs="$favs, '$term'"
   favs="$favs, 'chromeos-drive.desktop', 'chromeos-docs.desktop', 'chromeos-sheets.desktop'"
   favs="$favs, 'chromeos-photos.desktop', 'chromeos-maps.desktop', 'chromeos-youtube.desktop'"

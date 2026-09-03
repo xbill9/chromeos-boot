@@ -47,10 +47,21 @@ if command -v gcloud >/dev/null 2>&1 ; then
 elif [ -x "$gcloud" ] ; then
   log "gcloud: already installed at $sdk"
 else
+  # We only reach this when $sdk/bin/gcloud is missing, so anything still at
+  # $sdk is a partial install -- an interrupted download or extract.  Clear
+  # it: with --disable-prompts the installer refuses an existing directory
+  # ("Remove ... or select a new installation directory, then run again")
+  # rather than replacing it, which would wedge every retry from here on.
+  if [ -e "$sdk" ] ; then
+    log "gcloud: clearing a partial install at $sdk"
+    rm -rf "$sdk" || die "cannot remove $sdk -- delete it by hand and re-run"
+  fi
   log "gcloud: installing to $sdk (no sudo required)"
   tmp=`mktemp -t gcloud-install.XXXXXX` || die "cannot create temp file"
   trap 'rm -f "$tmp"' EXIT
-  curl -sSL https://sdk.cloud.google.com > "$tmp" || die "cannot download installer"
+  # -f so a 5xx or a captive portal is an error rather than an HTML page
+  # that passes the -s test below and then gets handed to bash.
+  curl -fsSL https://sdk.cloud.google.com > "$tmp" || die "cannot download installer"
   [ -s "$tmp" ] || die "installer downloaded empty"
   bash "$tmp" --disable-prompts --install-dir="$HOME" || die "gcloud install failed"
   rm -f "$tmp"
@@ -81,9 +92,14 @@ PATH="`dirname "$gcloud"`:$PATH" "$HOME/bin/nnn" || die "nnn failed"
 # --- gcloud, the apt one --------------------------------------------------
 # Done last, once the container is seeded: this is the copy that lands on
 # PATH and gets updated with everything else, so `bootstrap gcloud` finds it
-# already in place.  Non-fatal -- the tarball still works, and `bootstrap
-# gcloud` will retry -- so a machine without sudo or without the network is
-# staged all the same.
+# already in place.  Non-fatal -- the tarball still works and this is safe to
+# re-run -- so a machine without sudo or without the network is staged all the
+# same.
+#
+# Retry by re-running stage, not with `bootstrap gcloud`.  A failure here can
+# leave the keyring behind, and `bootstrap gcloud` dearmors onto it without
+# --yes, so it stops on "File exists".  The --yes below is why re-running
+# stage does not.
 apt_gcloud() {
   sudo apt-get update -qq || return 1
   # gnupg for the dearmor below; the rest is what apt needs to speak https to
@@ -117,7 +133,7 @@ case $gcloud in
           rm -rf "$sdk" || warn "could not remove $sdk -- delete it by hand" ;;
       esac
     else
-      warn "apt gcloud: install failed -- keeping $sdk, retry with \`bootstrap gcloud\`"
+      warn "apt gcloud: install failed -- keeping $sdk, retry with \`bash stage\`"
     fi
     ;;
   *)

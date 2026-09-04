@@ -175,8 +175,8 @@ wallpaper and the keybindings are live immediately.
   isn't tied to one laptop's monitor — but a monitor this stage has never seen
   falls back to dash-to-panel's own left-stacked default, so plug the second
   screen in first and re-run `bash flex shelf`.
-- **`webapps`** — the ten Google apps (Gmail, Chat, Calendar, Drive, Docs,
-  Sheets, Keep, Photos, Maps, YouTube) as windowless launchers with their own
+- **`webapps`** — the eleven Google apps (Gemini, Gmail, Chat, Calendar, Drive,
+  Docs, Sheets, Keep, Photos, Maps, YouTube) as windowless launchers with their own
   shelf icons, icons fetched from gstatic with a favicon-service fallback. All
   are pinned to the shelf except Keep.
 

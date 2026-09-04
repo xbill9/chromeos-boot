@@ -312,7 +312,7 @@ print(enc({i:layout for i in ids}))
 }
 
 ##################################################################### webapps
-# The ten Google web apps, as launchers that open a Chrome app window with no
+# The eleven Google web apps, as launchers that open a Chrome app window with no
 # tab strip and no omnibox -- which is what a ChromeOS "app" actually is.
 #
 # Each one is emitted in whichever of two forms the machine can support:
@@ -335,7 +335,8 @@ print(enc({i:layout for i in ids}))
 #   WAYLAND_DEBUG=1 google-chrome-stable --user-data-dir=$(mktemp -d) --app=<url>
 # and grepping the stderr for set_app_id: xprop cannot see Wayland windows, and
 # GNOME's Introspect D-Bus API refuses callers that are not allowlisted.
-WEBAPPS="gmail|Gmail|https://mail.google.com/mail/u/0/|gmail_2020q4_512dp
+WEBAPPS="gemini|Gemini|https://gemini.google.com/app|gemini_512dp
+gmail|Gmail|https://mail.google.com/mail/u/0/|gmail_2020q4_512dp
 chat|Chat|https://mail.google.com/chat/u/0/|chat_2020q4_512dp
 calendar|Calendar|https://calendar.google.com/calendar/r|calendar_2020q4_512dp
 drive|Drive|https://drive.google.com/drive/my-drive|drive_2020q4_512dp
@@ -369,7 +370,7 @@ pwa_id_for() {
 }
 
 stage_webapps() {
-  log "webapps: ten Google apps as launchers"
+  log "webapps: eleven Google apps as launchers"
   if [ -z "$BROWSER" ] ; then
     warn "no Chromium-family browser -- skipping.  \`bash flex pkgs webapps\` once one is installed"
     return
@@ -551,7 +552,7 @@ stage_look() {
   [ -f /usr/share/applications/$bdesk ] || bdesk=$BROWSER.desktop
   term=org.gnome.Terminal.desktop
   [ -f /usr/share/applications/$term ] || term=""
-  favs="'$bdesk', 'chromeos-gmail.desktop', 'chromeos-chat.desktop'"
+  favs="'$bdesk', 'chromeos-gemini.desktop', 'chromeos-gmail.desktop', 'chromeos-chat.desktop'"
   favs="$favs, 'chromeos-calendar.desktop'"
   [ -n "$term" ] && favs="$favs, '$term'"
   favs="$favs, 'chromeos-drive.desktop', 'chromeos-docs.desktop', 'chromeos-sheets.desktop'"

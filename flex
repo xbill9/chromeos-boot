@@ -337,7 +337,7 @@ print(enc({i:layout for i in ids}))
 # GNOME's Introspect D-Bus API refuses callers that are not allowlisted.
 WEBAPPS="gemini|Gemini|https://gemini.google.com/app|gemini_512dp
 gmail|Gmail|https://mail.google.com/mail/u/0/|gmail_2020q4_512dp
-chat|Chat|https://mail.google.com/chat/u/0/|chat_2020q4_512dp
+chat|Chat|https://mail.google.com/chat/u/0/|chat_2023q4_512dp
 calendar|Calendar|https://calendar.google.com/calendar/r|calendar_2020q4_512dp
 drive|Drive|https://drive.google.com/drive/my-drive|drive_2020q4_512dp
 docs|Docs|https://docs.google.com/document/u/0/|docs_2020q4_512dp

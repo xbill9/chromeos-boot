@@ -124,13 +124,6 @@ private. Everything it touches lives under `$HOME` except the `pkgs` stage
 (apt, and non-fatal without sudo) and `boot-splash.sh`, a script it installs
 but never runs, since that one edits GRUB.
 
-It also feels quicker than the ChromeOS Flex it imitates, though that is an
-impression from daily use and not a measurement. There is a plausible reason
-for it: this is GNOME on bare Debian, so nothing pays for Flex's session
-model — the browser is an application rather than the shell itself, and local
-apps run on the machine instead of behind Crostini's VM. What `flex` copies
-is the layout, not the platform underneath it.
-
 ### Display manager
 
 Install GNOME with **gdm3** — the Debian installer's default desktop task
@@ -183,9 +176,40 @@ wallpaper and the keybindings are live immediately.
   falls back to dash-to-panel's own left-stacked default, so plug the second
   screen in first and re-run `bash flex shelf`.
 - **`webapps`** — the ten Google apps (Gmail, Chat, Calendar, Drive, Docs,
-  Sheets, Keep, Photos, Maps, YouTube) as windowless `--app=` launchers with
-  their own shelf icons, icons fetched from gstatic with a favicon-service
-  fallback.
+  Sheets, Keep, Photos, Maps, YouTube) as windowless launchers with their own
+  shelf icons, icons fetched from gstatic with a favicon-service fallback. All
+  are pinned to the shelf except Keep.
+
+  Two forms. If the site has been **installed as a PWA** the launcher uses
+  `--app-id=<id>`, which is what ChromeOS itself does: the window carries the
+  manifest's identity and Chrome names it `crx_<id>`, a name that survives
+  Google reorganising the site's URLs. Otherwise it falls back to `--app=<url>`,
+  a plain app-shortcut window with no manifest and no scope. The stage detects
+  installed apps by looking for the launcher Chrome generates for them, so the
+  upgrade path is: install from Chrome's ⋮ menu → *Cast, Save and Share* →
+  *Install page as app*, then re-run `bash flex webapps`. Where both exist,
+  Chrome's own launcher is hidden with `NoDisplay=true` and stripped of its
+  `StartupWMClass` so it neither doubles up in the app grid nor competes for
+  the window; `flex revert` restores both lines.
+
+  **`--class` does nothing under Wayland.** Chrome names an `--app=` window
+  after its URL — `chrome-<host>__<path>-Default`, every character outside
+  `[A-Za-z0-9.-]` replaced by an underscore — and ignores the flag entirely.
+  A `StartupWMClass` that doesn't match means GNOME never sees the app as
+  running, so *every click on the shelf icon opens another window*, which is
+  exactly what the hand-written `--class=chromeos-<id>` launchers used to do.
+  The rule in `wmclass_for_url()` was measured rather than guessed, and
+  reproduces all ten ids exactly:
+
+  ```
+  WAYLAND_DEBUG=1 google-chrome-stable --user-data-dir=$(mktemp -d) \
+      --app=https://mail.google.com/mail/u/0/ 2>&1 | grep set_app_id
+  ```
+
+  That is the only way to read the id on this box: `xprop` cannot see Wayland
+  windows, `org.gnome.Shell.Eval` is off without unsafe-mode, and
+  `org.gnome.Shell.Introspect.GetWindows` returns `AccessDenied` to callers
+  that are not allowlisted.
 - **`appgrid`** — hides the apps ChromeOS doesn't have (LibreOffice, xterm,
   Disk Utility, and 30-odd others) by shadowing each system `.desktop` with a
   copy carrying `NoDisplay=true` — a copy, not a stub, so MIME associations

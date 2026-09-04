@@ -314,8 +314,27 @@ print(enc({i:layout for i in ids}))
 ##################################################################### webapps
 # The ten Google web apps, as launchers that open a Chrome app window with no
 # tab strip and no omnibox -- which is what a ChromeOS "app" actually is.
-# --class is what gives each one its own shelf icon instead of all of them
-# stacking under Chrome; StartupWMClass is how GNOME matches the window back.
+#
+# Each one is emitted in whichever of two forms the machine can support:
+#
+#   --app-id=<id>  when the site has been installed as a PWA.  This is the
+#                  ChromeOS way: the window carries the manifest's identity, so
+#                  Chrome names it crx_<id> and that name survives Google
+#                  moving the site's URLs around.  Install one from Chrome's
+#                  menu -> Cast, Save and Share -> Install page as app, then
+#                  re-run `bash flex webapps` to pick it up.
+#   --app=<url>    otherwise.  A plain app-shortcut window: no manifest, no
+#                  scope, and a name derived from the URL.
+#
+# Matching the window back to the launcher is the part that bites.  --class is
+# *ignored* under Wayland -- Chrome names an --app= window after its URL
+# instead, as chrome-<host>__<path>-Default with every character outside
+# [A-Za-z0-9.-] replaced by an underscore.  Get StartupWMClass wrong and GNOME
+# never sees the app as running, so every click on the shelf icon opens yet
+# another window.  Measured, not guessed, with
+#   WAYLAND_DEBUG=1 google-chrome-stable --user-data-dir=$(mktemp -d) --app=<url>
+# and grepping the stderr for set_app_id: xprop cannot see Wayland windows, and
+# GNOME's Introspect D-Bus API refuses callers that are not allowlisted.
 WEBAPPS="gmail|Gmail|https://mail.google.com/mail/u/0/|gmail_2020q4_512dp
 chat|Chat|https://mail.google.com/chat/u/0/|chat_2020q4_512dp
 calendar|Calendar|https://calendar.google.com/calendar/r|calendar_2020q4_512dp
@@ -326,6 +345,28 @@ keep|Keep|https://keep.google.com/|keep_2020q4_512dp
 photos|Photos|https://photos.google.com/|photos_512dp
 maps|Maps|https://www.google.com/maps|maps_512dp
 youtube|YouTube|https://www.youtube.com/|youtube_512dp"
+
+# Chrome's rule for naming an --app= window, reproduced.  GURL always gives a
+# path, so a bare host counts as "/" and ends up with the same double
+# underscore as any other root URL.
+wmclass_for_url() {
+  printf 'chrome-%s-Default\n' "`printf '%s' "$1" |
+    sed 's|^https\{0,1\}://||; s|^\([^/]*\)$|\1/|; s|/|_/|; s|[^A-Za-z0-9._-]|_|g'`"
+}
+
+# Chrome writes its own launcher for an installed PWA as
+# chrome-<id>-Default.desktop, naming it from the manifest -- "Google Calendar"
+# where our table says "Calendar".  That substring is the only link between the
+# two, since the id is a hash of a manifest id we cannot see from here.
+pwa_id_for() {
+  for f in "$APPS"/chrome-*-Default.desktop ; do
+    [ -f "$f" ] || continue
+    case "`sed -n 's/^Name=//p' "$f" | head -1`" in
+      *"$1"*) f=${f##*/}; f=${f#chrome-}; printf '%s\n' "${f%-Default.desktop}"; return 0 ;;
+    esac
+  done
+  return 1
+}
 
 stage_webapps() {
   log "webapps: ten Google apps as launchers"
@@ -350,24 +391,42 @@ stage_webapps() {
         }
       }
     fi
+    if appid=`pwa_id_for "$name"` ; then
+      # Reuse Chrome's own Exec verbatim: it already carries the right binary,
+      # the right profile and the right app id.
+      chromedesk="$APPS/chrome-$appid-Default.desktop"
+      launch=`sed -n 's/^Exec=//p' "$chromedesk" | head -1`
+      wmclass=crx_$appid
+      # Two launchers for one app: Chrome's would double up in the app grid,
+      # and a second claim on the same StartupWMClass makes which launcher owns
+      # the window a coin toss.  Hide it and take the class off it -- ours keeps
+      # the ChromeOS name and icon, which Chrome would overwrite on update.
+      # `flex revert` puts both lines back.
+      grep -q '^NoDisplay=true$' "$chromedesk" || printf 'NoDisplay=true\n' >> "$chromedesk"
+      sed -i '/^StartupWMClass=/d' "$chromedesk"
+      note=" (installed app)"
+    else
+      launch="$BROWSER --app=$url"
+      wmclass=`wmclass_for_url "$url"`
+      note=""
+    fi
     cat > "$APPS/chromeos-$id.desktop" <<DESK
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=$name
 Comment=$name web app
-Exec=$BROWSER --app=$url --class=chromeos-$id
+Exec=$launch
 Icon=$WEBICONS/$id.png
-StartupWMClass=chromeos-$id
+StartupWMClass=$wmclass
 StartupNotify=true
 Terminal=false
 Categories=Network;
 DESK
-    printf '    %s\n' "$name"
+    printf '    %s%s\n' "$name" "$note"
   done
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
 }
-
 ##################################################################### appgrid
 # ChromeOS has no LibreOffice, no xterm and no Disk Utility in its launcher.
 # Hide them by shadowing each system .desktop with a *copy* carrying
@@ -825,6 +884,17 @@ do_revert() {
   log "revert: removing files"
   rm -f "$APPS"/chromeos-*.desktop
   rm -rf "$WEBICONS"
+  # webapps hides Chrome's own launcher for an installed PWA and takes the
+  # class off it so ours can own the window.  Put both lines back; the id is
+  # recoverable from the filename.
+  for f in "$APPS"/chrome-*-Default.desktop ; do
+    [ -f "$f" ] || continue
+    sed -i '/^NoDisplay=true$/d' "$f"
+    if ! grep -q '^StartupWMClass=' "$f" ; then
+      b=${f##*/}; b=${b#chrome-}
+      printf 'StartupWMClass=crx_%s\n' "${b%-Default.desktop}" >> "$f"
+    fi
+  done
   for f in $HIDE org.gnome.TextEditor.desktop ; do
     # Only remove the shadow copy; a file with no system original was edited
     # in place, so strip the line back out instead of deleting the launcher.

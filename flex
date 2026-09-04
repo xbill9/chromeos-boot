@@ -516,10 +516,14 @@ stage_appgrid() {
 stage_look() {
   log "look: fonts, chrome, favourites"
 
+  # Roboto 11, not 12: text-scaling-factor below multiplies this rather than
+  # replacing it, so a 12 here lands at ~14.4pt effective -- bigger than either
+  # knob was aimed at.  Size belongs in one place, and the scale factor is the
+  # one that also reaches Chrome's UI.
   if fc-list : family 2>/dev/null | tr ',' '\n' | grep -qix 'Roboto' ; then
-    gsettings set org.gnome.desktop.interface font-name 'Roboto 12'
-    gsettings set org.gnome.desktop.interface document-font-name 'Roboto 12'
-    gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Roboto Medium 12'
+    gsettings set org.gnome.desktop.interface font-name 'Roboto 11'
+    gsettings set org.gnome.desktop.interface document-font-name 'Roboto 11'
+    gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Roboto Medium 11'
     step "Roboto as the UI, document and titlebar font"
   else
     warn "Roboto not installed -- \`sudo apt install fonts-roboto\`, then \`bash flex look\`"

@@ -1,0 +1,12 @@
+# Keep a bare `shellcheck flex stage` in step with the PostToolUse hook in
+# .claude/settings.json, which runs at severity=warning.
+#
+# 0.10 ignores `severity=` from this file (it is a command-line flag only), so
+# the two style-level checks that fire on this codebase are disabled by name.
+
+# Backticks are the house style in the top-level scripts -- see CLAUDE.md.
+# `$( )` appears only inside the heredoc'd helper scripts.
+disable=SC2006
+
+# `set -- $s` in do_revert splits the schema/key lists on whitespace on purpose.
+disable=SC2086

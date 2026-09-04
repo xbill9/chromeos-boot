@@ -425,6 +425,32 @@ Categories=Network;
 DESK
     printf '    %s%s\n' "$name" "$note"
   done
+
+  # ChromeOS opens a mailto: link in Gmail; Debian hands it to Evolution.
+  # This cannot be pointed at an app launcher, installed or not: neither ours
+  # nor Chrome's carries a %u, so the address would be dropped and you would
+  # get an empty inbox instead of a compose window.  Gmail's own protocol
+  # handler URL takes the whole mailto: as a parameter, so wrap that in a
+  # launcher of its own.  NoDisplay because it is a handler, not an app.
+  cat > "$APPS/chromeos-mailto.desktop" <<MAILTO
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Gmail
+Comment=Compose in Gmail
+Exec=$BROWSER "--app=https://mail.google.com/mail/?extsrc=mailto&url=%u"
+Icon=$WEBICONS/gmail.png
+NoDisplay=true
+StartupNotify=true
+Terminal=false
+MimeType=x-scheme-handler/mailto;
+MAILTO
+  if xdg-mime default chromeos-mailto.desktop x-scheme-handler/mailto 2>/dev/null ; then
+    step "mailto: -> Gmail"
+  else
+    warn "could not set the mailto: handler -- Settings -> Default Applications -> Mail"
+  fi
+
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
 }
 ##################################################################### appgrid
@@ -720,6 +746,32 @@ d2p() {
   gsettings --schemadir "$SD" set org.gnome.shell.extensions.dash-to-panel "$@"
 }
 
+# Chrome is the one window that will not follow this switch on its own.  A
+# custom theme, or Appearance -> Mode set to anything but System, pins it --
+# and neither can be changed from outside a running Chrome, because themes are
+# extensions and live in Secure Preferences behind a MAC.  So say so, rather
+# than leave the desktop half light and half dark with no explanation.
+chrome_mode_check() {
+  local prefs=~/.config/google-chrome/Default/Preferences
+  [ -r "$prefs" ] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+  python3 - "$prefs" <<'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    raise SystemExit
+theme   = (d.get("extensions", {}).get("theme") or {}).get("id")
+follows = (d.get("browser", {}).get("theme") or {}).get("follows_system_colors")
+why = []
+if theme:            why.append("a custom theme is installed")
+if follows is False: why.append("Appearance -> Mode is not System")
+if why:
+    print("note: Chrome will not follow this -- " + " and ".join(why) + ".")
+    print("      Chrome -> Settings -> Appearance: Reset to default, Mode: System.")
+PYEOF
+}
+
 case "${1:-}" in
   light)
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
@@ -740,6 +792,7 @@ case "${1:-}" in
     # Google Blue 600 on light; ChromeOS uses the lighter Blue 300 on dark.
     for n in 1 2 3 4; do d2p dot-color-$n '#1a73e8'; d2p dot-color-unfocused-$n '#1a73e8'; done
     echo "switched to light"
+    chrome_mode_check
     ;;
   dark)
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
@@ -759,12 +812,14 @@ case "${1:-}" in
     d2p focus-highlight-color '#e8eaed'
     for n in 1 2 3 4; do d2p dot-color-$n '#8ab4f8'; d2p dot-color-unfocused-$n '#8ab4f8'; done
     echo "switched to dark"
+    chrome_mode_check
     ;;
   "")
     echo "current: $(gsettings get org.gnome.desktop.interface color-scheme)"
     echo "  gtk-theme  $(gsettings get org.gnome.desktop.interface gtk-theme)"
     echo "  icon-theme $(gsettings get org.gnome.desktop.interface icon-theme)"
     echo "  wallpaper  $(gsettings get org.gnome.desktop.background picture-uri)"
+    chrome_mode_check
     echo "usage: $0 [light|dark]"
     ;;
   *)
@@ -887,6 +942,11 @@ do_revert() {
   # webapps hides Chrome's own launcher for an installed PWA and takes the
   # class off it so ours can own the window.  Put both lines back; the id is
   # recoverable from the filename.
+  # mailto: goes back to whatever the system default was; dropping the line
+  # is what does it, since the launcher itself is a chromeos-*.desktop and has
+  # already been removed above.
+  [ -f "$HOME/.config/mimeapps.list" ] &&
+    sed -i '/^x-scheme-handler\/mailto=chromeos-mailto\.desktop$/d' "$HOME/.config/mimeapps.list"
   for f in "$APPS"/chrome-*-Default.desktop ; do
     [ -f "$f" ] || continue
     sed -i '/^NoDisplay=true$/d' "$f"
@@ -932,7 +992,7 @@ for s in $STAGES ; do
   wants "$s" && "stage_$s"
 done
 
-cat <<DONE
+cat <<'DONE'
 
   Log out and back in.
 
@@ -947,12 +1007,21 @@ cat <<DONE
       bash flex -l                                      the stages, to repair one
       bash flex revert                                  undo it
 
-  Two things this cannot do for you:
+  Four things this cannot do for you, all of them inside Chrome:
 
     - Drive in the Files app.  Settings -> Online Accounts -> Google.
     - Chrome reopening your tabs.  Chrome Settings -> On startup -> Continue
       where you left off.  There is a managed-policy way to set this, but it
       stamps "Managed by your organization" on the Chrome menu permanently and
       greys the setting out, which is a bad trade for one click.
+    - Chrome following the light/dark switch.  Settings -> Appearance: Reset
+      to default and set Mode to System.  A custom theme overrides the system
+      colours and cannot be removed from outside a running Chrome.
+    - Installing the web apps as PWAs, which is what upgrades a launcher from
+      --app= to --app-id= and gives it a name that survives Google moving its
+      URLs.  One click each: Chrome menu -> Cast, Save and Share -> Install
+      page as app, then re-run  bash flex webapps  to pick them all up.
+      There is no scriptable route: Chrome has no install switch, and since
+      Chrome 136 --remote-debugging-port refuses the default profile.
 
 DONE

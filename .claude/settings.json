@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Checking shell syntax",
+            "timeout": 30,
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"${f##*/}\" in flex|stage) out=$(bash -n \"$f\" 2>&1 && shellcheck -S warning \"$f\" 2>&1) || { printf '%s\\n' \"$out\" >&2; exit 2; } ;; esac; }"
+          }
+        ]
+      }
+    ]
+  }
+}

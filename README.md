@@ -179,7 +179,7 @@ wallpaper and the keybindings are live immediately.
 - **`icons`** — Papirus and Papirus-Dark, user-level.
 - **`shelf`** — installs dash-to-panel in place of the packaged dash-to-dock:
   only dash-to-panel merges the taskbar and system tray into one bar, which is
-  what the ChromeOS shelf is. Bottom, 56px, 75% opacity, Google-Blue
+  what the ChromeOS shelf is. Bottom, 36px, 75% opacity, Google-Blue
   running-app dots, Alt+1-9 launches the nth pinned app. App icons are
   centred on the monitor with the launcher hard left and the clock and tray
   hard right, as on ChromeOS. The per-monitor layout is resolved through

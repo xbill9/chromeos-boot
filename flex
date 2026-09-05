@@ -324,7 +324,7 @@ stage_shelf() {
   # overrides them when the monitor can be identified, and the global values
   # are what a monitor this script has never seen falls back to.
   d2p panel-position "'BOTTOM'"
-  d2p panel-size 56
+  d2p panel-size 36
   d2p stockgs-keep-top-panel false      # one bar, not two
   d2p hide-overview-on-startup true     # ChromeOS boots to the desktop
   d2p intellihide false                 # the shelf does not autohide
@@ -332,8 +332,14 @@ stage_shelf() {
   d2p show-favorites true
   d2p show-running-apps true
   d2p show-apps-icon-side-padding 10
+  # Icon geometry has to scale with the bar.  The icon is the panel size less
+  # twice appicon-padding, so a fixed padding eats a bigger share of a shorter
+  # bar -- leave it at the 6 that suited a 56px shelf and the icons shrink
+  # faster than the shelf does.  appicon-margin stays where it was: on a
+  # bottom panel that is the horizontal gap between icons, not vertical
+  # padding, so the shorter bar does not bear on it.
   d2p appicon-margin 4
-  d2p appicon-padding 6
+  d2p appicon-padding 5
   d2p animate-appicon-hover true
 
   # Alt+1..9 launches the nth shelf app, as on ChromeOS.
@@ -387,7 +393,7 @@ elements=[("showAppsButton",True,"stackedTL"),("activitiesButton",False,"stacked
 layout=[{"element":e,"visible":v,"position":p} for e,v,p in elements]
 enc=lambda d: json.dumps(d,separators=(",",":"))
 print(enc({i:"BOTTOM" for i in ids}))
-print(enc({i:56 for i in ids}))
+print(enc({i:36 for i in ids}))
 print(enc({i:layout for i in ids}))
 ' 2>/dev/null`
     set -- $json
@@ -395,12 +401,12 @@ print(enc({i:layout for i in ids}))
       d2p panel-positions "$1"
       d2p panel-sizes "$2"
       d2p panel-element-positions "$3"
-      step "shelf pinned bottom, 56px, icons centred, on: `printf '%s' "$ids" | tr '\n' ' '`"
+      step "shelf pinned bottom, 36px, icons centred, on: `printf '%s' "$ids" | tr '\n' ' '`"
     else
-      warn "could not build the per-monitor layout -- the global 56px bottom panel still applies"
+      warn "could not build the per-monitor layout -- the global 36px bottom panel still applies"
     fi
   else
-    warn "could not identify the monitor -- the global 56px bottom panel still applies"
+    warn "could not identify the monitor -- the global 36px bottom panel still applies"
   fi
 }
 

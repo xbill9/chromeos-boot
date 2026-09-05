@@ -1262,6 +1262,15 @@ to confirm them each time, and do not offer the alternative "just in case".
 - **Never suggest a virtualenv.** No `venv`, `virtualenv`, `conda`, `uv venv` or
   "activate your environment first". Run Python and install packages against the
   interpreter that is already there.
+
+# Wording
+
+- **Never write "honestly" or "honest".** Not in chat, not in commit messages,
+  not in documents, comments or code. No "to be honest", "honestly", "the
+  honest answer". The user dislikes the word. Say the thing directly instead:
+  "an honest blank is correct" becomes "a blank is correct"; "I'll be honest,
+  the data is thin" becomes "the data is thin". The hedge adds nothing that the
+  plain statement does not already carry.
 CMEOF
 }
 

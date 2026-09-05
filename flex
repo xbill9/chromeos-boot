@@ -39,7 +39,7 @@ step() { printf '    %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
 
-STAGES="repos pkgs theme icons shelf webapps appgrid look keys helpers wallpaper"
+STAGES="repos pkgs theme icons shelf webapps appgrid look keys helpers claude wallpaper"
 
 # --- paths ----------------------------------------------------------------
 APPS=$HOME/.local/share/applications
@@ -1030,6 +1030,279 @@ BSEOF
   step "set-mode.sh, gen_wallpaper.py, boot-splash.sh (the last one is not run)"
 }
 
+###################################################################### claude
+# Claude Code's own preferences, so a rebuilt machine opens on a prompt rather
+# than on the onboarding wizard followed by a fortnight of first-run notices.
+#
+# The configuration is two files with entirely different natures, and only one
+# of them may be copied between machines:
+#
+#   ~/.claude/settings.json   preferences.  Documented, hand-editable,
+#                             portable, and ours to merge into.
+#   ~/.claude.json            machine state.  The one-shot dialog flags live
+#                             here, but so do machineID, userID, oauthAccount
+#                             and the path of every project ever opened -- so
+#                             it is merged key by key and never copied whole.
+#
+# ~/.claude/.credentials.json is not touched at all.  The new machine does one
+# `claude login`, which is where this stops being a config file and starts
+# being an account.
+#
+# The notices are turned off through the settings schema wherever one exists,
+# rather than by pre-seeding the counters that record having seen them.
+# `tipsHistory` and `announcementImpressions` are keyed by tip and notice id
+# and hold the startup number each was last shown at, so seeding them means
+# hard-coding a list that every release adds to -- which then stops covering
+# the new ones without ever failing.  `spinnerTipsEnabled` and
+# `feedbackSurveyRate` are the supported switches for those same two things
+# and cannot rot that way.
+#
+# `bypassPermissionsModeAccepted` is deliberately not written either: current
+# versions migrate it into settings.json as
+# `skipDangerousModePermissionPrompt` and then delete the key, so writing it
+# would be writing the losing half of a migration.
+CLAUDE_DIR=$HOME/.claude
+CLAUDE_STATE=$HOME/.claude.json
+
+# The preferences, as dotted keys.  Written as a patch rather than as a whole
+# file because settings.json is also where `/config` puts everything you have
+# ever toggled by hand, and where permissions.allow accumulates.
+claude_settings_patch() {
+  # The theme follows --light/--dark, so the terminal and the desktop agree
+  # after `bash flex --light`; "light" and "dark" are both theme names.
+  cat <<EOF
+{
+  "theme": "$mode",
+  "permissions.defaultMode": "auto",
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "spinnerTipsEnabled": false,
+  "feedbackSurveyRate": 0,
+  "terminalProgressBarEnabled": false,
+  "inputNeededNotifEnabled": true
+}
+EOF
+}
+
+# The dialogs that have no settings key, only a state flag.
+claude_state_patch() {
+  ver=`claude --version 2>/dev/null | awk '{print $1}'`
+  # Both version keys are compared against the running version, so there is
+  # nothing to write until Claude Code is installed: null means "skip this
+  # one", and a re-run after installing picks them up.  Naming them here
+  # regardless is what lets revert take them back out.
+  if [ -n "$ver" ] ; then ver="\"$ver\"" ; else ver=null ; fi
+  cat <<EOF
+{
+  "hasCompletedOnboarding": true,
+  "hasCompletedClaudeInChromeOnboarding": true,
+  "lastOnboardingVersion": $ver,
+  "lastReleaseNotesSeen": $ver
+}
+EOF
+}
+
+# Merge a patch of dotted keys into a JSON file, or with `unset` take the same
+# keys back out.  Read-modify-write, which is what makes a second run a no-op
+# and what keeps the OAuth account in ~/.claude.json: rewriting either file
+# wholesale would work exactly once.  Prints the number of keys changed.
+claude_json() {
+  python3 - "$1" "$2" "$3" <<'PYEOF'
+import json, os, sys, tempfile
+
+path, action, patch = sys.argv[1], sys.argv[2], json.loads(sys.argv[3])
+
+try:
+    with open(path) as fh:
+        cfg = json.load(fh)
+except FileNotFoundError:
+    cfg = {}
+except ValueError:
+    sys.exit("%s is not valid JSON" % path)
+if not isinstance(cfg, dict):
+    sys.exit("%s is not a JSON object" % path)
+
+
+def chain(keys, make):
+    """[(dict, key), ...] down to the leaf, or None when the path is absent."""
+    out, d = [], cfg
+    for k in keys[:-1]:
+        nxt = d.get(k)
+        if not isinstance(nxt, dict):
+            if not make:
+                return None
+            nxt = {}
+            d[k] = nxt
+        out.append((d, k))
+        d = nxt
+    out.append((d, keys[-1]))
+    return out
+
+
+n = 0
+for dotted, want in patch.items():
+    links = chain(dotted.split("."), action == "set")
+    if links is None:
+        continue
+    d, k = links[-1]
+    if action == "set":
+        # null is "named so revert knows it, but nothing to write yet".
+        if want is None or (k in d and d[k] == want):
+            continue
+        d[k] = want
+    else:
+        if k not in d:
+            continue
+        del d[k]
+        # A container left empty is debris of the key just removed, so it
+        # goes too -- "permissions": {} is not a preference anyone set.
+        for parent, key in reversed(links[:-1]):
+            if parent[key] == {}:
+                del parent[key]
+    n += 1
+
+if n:
+    # Temp file and rename, so an interrupted write cannot leave a truncated
+    # config behind; 0600 for a new file, since the state file holds an
+    # account and mkstemp's own default is the only sensible one to inherit.
+    mode = os.stat(path).st_mode & 0o777 if os.path.exists(path) else 0o600
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".")
+    with os.fdopen(fd, "w") as fh:
+        json.dump(cfg, fh, indent=2)
+        fh.write("\n")
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+print(n)
+PYEOF
+}
+
+# The global instructions, packaged.  Dashes are flattened to -- like the rest
+# of this script; it is the one place the content is not byte-for-byte the
+# original.
+claude_md() {
+  cat <<'CMEOF'
+# Reference
+
+- [gemma-skills](https://github.com/google-gemma/gemma-skills) -- Skills for Gemma model/agent interactions: `gemma-dev` (building apps with Gemma, general Gemma questions) and `gemma-trainer` (fine-tuning on local hardware).
+- [TPU v5e vs T4 GPU](https://deploybase.ai/articles/v5e-1-tpu-vs-t4-gpu) -- third-party budget-accelerator comparison (DeployBase, Apr 2025). Its benchmarks are a quantized 7B on an unrelated harness -- directional context, not comparable to measured numbers from these rigs.
+
+# Naming: rig directories
+
+Rig directories are named `<platform>-<runtime>-<hardware>-<model>` -- four positional slots, lowercase, e.g. `tpu-vllm-v5e1-2b`.
+
+**`~/gemma4-dev/NAMING.md` is the spec -- read it before naming, renaming, or adding a rig.** It holds the permitted value for every slot; do not fill one in from memory or by pattern-matching a sibling directory. Two rules that decide whether you need it: **the directory name is documentation, not config** -- authoritative values live in the project's env file (`MODEL_NAME`, `ACCELERATOR_TYPE`, `TENSOR_PARALLEL_SIZE`), which siblings spell inconsistently (`v5litepod-1` vs `v5e-1`), so never copy a slot value into a CLI flag. And directories under `~/tpu-*` and `~/gemma4-queens/` predate the scheme, so their names are not evidence of it.
+
+# Medium: importing an article
+
+Import (`medium.com/p/import`) beats pasting by hand -- it brings prose,
+headings, links and images in one step. Every item below was measured on
+2026-08-23 by importing real pages and inspecting the result; each one cost at
+least one wasted import, and several of them fail **silently**, which is what
+makes them expensive. Reference implementation: `docs/make_preview.py`,
+`docs/make_gists.py` and `docs/make_code_images.py` in
+[multicloud-a2a-subagent](https://github.com/xbill9/multicloud-a2a-subagent),
+with the checklist in its `docs/MEDIUM-PUBLISHING.md`.
+
+**The three silent killers.** Each looks like your fix did not work:
+
+- **A link inside `<figcaption>` makes Medium drop the whole figure.** No error,
+  no placeholder -- the image simply is not there. Caption must be plain text;
+  put the link in a paragraph *after* the figure.
+- **The importer caches by URL and ignores the query string.** `?v=2` does not
+  bust it. Give the importer a **content-addressed filename** so a changed page
+  is always a URL Medium has never seen.
+- **`<link rel="canonical">` is resolved by the importer**, so a canonical
+  pointing at your stable page serves *that* URL's cached copy no matter which
+  URL you submitted. Strip the canonical from the copy you hand the importer.
+
+**What the importer does to your markup:**
+
+- `<pre>` is flattened to a single line and `<br>` is stripped, so **code cannot
+  survive as text**. Render multi-line blocks as images; a gist link underneath
+  keeps them copyable. Single-line blocks import fine as real code blocks.
+- **No markup produces an embed.** Bare URL, anchor, `<figure>`-wrapped anchor,
+  `data-oembed-url` and `<iframe>` were all tested: the first four become plain
+  links and the iframe is dropped. Gists cannot be embedded via import -- only by
+  pasting the URL in the editor afterwards.
+- **HTML comments are stripped even when correctly escaped** inside
+  `<pre><code>`. A block containing `<!-- ... -->` needs to be an image too.
+- **Markdown tables do not render at all.** Render them as images.
+- **Two heading sizes only:** `#`/`##` both become the big one, `###` and
+  smaller become the small one. Use `####` for section headings, or a
+  twelve-section article reads as twelve titles.
+
+**What works with no effort:** images. Medium fetches them, rehosts at 800px and
+takes `<figcaption>` as the caption. The **first image in the body becomes the
+story's cover.** Alt text is worth writing -- it is the accessible equivalent and
+it survives.
+
+**Driving it in a browser:** the import form's contenteditable rejects synthetic
+keystrokes intermittently. `medium.com/p/import-story?xsrf=<token>&importUrl=<urlencoded>`
+submits directly and is far more reliable; lift the token from one manual
+submit. When auditing an imported draft, note that Medium's editor lazy-loads
+and virtualises, so DOM counts lie until you scroll the whole document -- and
+**imported content is served from `0*` image URLs while Medium's own editor
+chrome is `1*`**, so count only `0*` or you will credit yourself images that are
+really the onboarding overlay.
+
+# Git and tooling: standing preferences
+
+These override the default harness guidance. Do not re-derive them, do not ask
+to confirm them each time, and do not offer the alternative "just in case".
+
+- **Work on the default branch.** Never create a feature branch, never propose
+  one, never open a pull request. Commit to `main` (or whatever the default
+  branch is) and push there.
+- **Push means local and remote.** When asked to push -- or to commit and push --
+  commit and push to the remote in the same step without stopping to confirm.
+  If there is no remote or no upstream, set one up (`git push -u`,
+  `gh repo create --source=. --push`) rather than reporting a blocker. Stop only
+  for something genuinely irreversible or unauthorized, such as a force-push, or
+  the public/private choice on a new repo.
+- **Never suggest a virtualenv.** No `venv`, `virtualenv`, `conda`, `uv venv` or
+  "activate your environment first". Run Python and install packages against the
+  interpreter that is already there.
+CMEOF
+}
+
+stage_claude() {
+  log "claude: preferences, with the first-run notices already answered"
+  mkdir -p "$CLAUDE_DIR" || { warn "cannot create $CLAUDE_DIR"; return; }
+
+  # Claude Code holds ~/.claude.json in memory and writes the whole file back
+  # when it exits, so anything merged in underneath a running session is gone
+  # the moment that session quits -- including the session that ran flex.
+  pgrep -x claude >/dev/null 2>&1 &&
+    warn "a claude session is running -- it rewrites ~/.claude.json when it exits; re-run \`bash flex claude\` once it has quit"
+
+  p=`claude_settings_patch`
+  if n=`claude_json "$CLAUDE_DIR/settings.json" set "$p"` ; then
+    step "settings.json: $n preference(s) written"
+  else
+    warn "settings.json left alone"
+  fi
+
+  p=`claude_state_patch`
+  if n=`claude_json "$CLAUDE_STATE" set "$p"` ; then
+    step "${CLAUDE_STATE##*/}: $n flag(s) merged"
+  else
+    warn "${CLAUDE_STATE##*/} left alone"
+  fi
+
+  # Installed only when there is nothing there.  A CLAUDE.md that has been
+  # edited on this machine is the user's file, not debris of ours, and a
+  # re-run is not the moment to overwrite it.
+  if [ ! -f "$CLAUDE_DIR/CLAUDE.md" ] ; then
+    claude_md > "$CLAUDE_DIR/CLAUDE.md" && step "CLAUDE.md installed"
+  elif claude_md | cmp -s - "$CLAUDE_DIR/CLAUDE.md" ; then
+    step "CLAUDE.md already installed"
+  else
+    warn "$CLAUDE_DIR/CLAUDE.md differs from the packaged one -- left alone"
+  fi
+
+  step "credentials, MCP servers and project history are not carried -- \`claude login\`"
+}
+
 ################################################################### wallpaper
 stage_wallpaper() {
   log "wallpaper: rendering the pair (~9s each)"
@@ -1138,6 +1411,23 @@ do_revert() {
   rm -rf "$HELPERS"
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
   step "launchers, icons, wallpapers and helpers removed"
+
+  # Claude Code: the keys this wrote come back out by name, from both files.
+  # Reset, not restore, like the gsettings above -- a preference that was
+  # there before flex set it is gone, not put back.  The patch functions are
+  # reused so there is one list of key names rather than two that drift.
+  if [ -f "$CLAUDE_DIR/settings.json" ] || [ -f "$CLAUDE_STATE" ] ; then
+    p=`claude_settings_patch`
+    n=`claude_json "$CLAUDE_DIR/settings.json" unset "$p"` &&
+      step "settings.json: $n preference(s) removed"
+    p=`claude_state_patch`
+    n=`claude_json "$CLAUDE_STATE" unset "$p"` &&
+      step "${CLAUDE_STATE##*/}: $n flag(s) removed"
+  fi
+  # Only our own copy, byte for byte: an edited CLAUDE.md is the user's.
+  if [ -f "$CLAUDE_DIR/CLAUDE.md" ] && claude_md | cmp -s - "$CLAUDE_DIR/CLAUDE.md" ; then
+    rm -f "$CLAUDE_DIR/CLAUDE.md" && step "CLAUDE.md removed"
+  fi
 
   # The one root-owned file flex writes outside $HOME, and the only part of
   # revert that wants a password.  Taking it back only narrows apt's view, so

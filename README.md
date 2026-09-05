@@ -240,6 +240,19 @@ wallpaper and the keybindings are live immediately.
   Ctrl+Shift+F5 screenshot; Ctrl+Shift+Q sign out; Ctrl+Alt+T terminal.
 - **`helpers`** — installs `set-mode.sh`, `gen_wallpaper.py` and
   `boot-splash.sh` under `~/.local/share/chromeos-flex/`.
+- **`claude`** — Claude Code's own preferences, so a rebuilt machine opens on
+  a prompt rather than on the onboarding wizard and a fortnight of first-run
+  notices: theme following `--light`/`--dark`, auto permission mode, spinner
+  tips and the feedback survey off, and the one-shot dialogs (onboarding,
+  Claude in Chrome, release notes) already answered. The two config files are
+  *merged*, key by key, never copied: `~/.claude/settings.json` is
+  preferences, but `~/.claude.json` is machine state and also holds the OAuth
+  account, the machine id and the path of every project ever opened.
+  `~/.claude/.credentials.json` is not touched at all — the new box does one
+  `claude login`. The packaged global `~/.claude/CLAUDE.md` is installed only
+  when there isn't one there already. Claude Code rewrites `~/.claude.json`
+  wholesale when it exits, so the stage says so if a session is running: run
+  it again once that session has quit.
 - **`wallpaper`** — renders both wallpaper variants (pure-Python PNG encoder,
   no Pillow needed) and applies the requested mode.
 
@@ -268,7 +281,10 @@ prior values) and removes the launchers, icons, wallpapers and helper
 scripts it created, plus the `contrib`/`non-free` sources file — the one
 part that asks for a password. Custom keyboard shortcuts are the exception
 to the reset: only the Ctrl+Alt+T entry `keys` added is taken out, matched
-by name and command, so shortcuts you added yourself keep working.
+by name and command, so shortcuts you added yourself keep working. Claude
+Code is the same shape: the keys `claude` wrote come out of both files by
+name and nothing else in them is disturbed, and `~/.claude/CLAUDE.md` goes
+only if it is still byte-for-byte the packaged copy.
 adw-gtk3, Papirus, dash-to-panel, Chrome's apt repo and any apt packages
 are left in place, since removing them isn't really an "undo" either.
 Anything already installed *from* `contrib` or `non-free` stays installed,

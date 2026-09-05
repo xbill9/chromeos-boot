@@ -117,7 +117,8 @@ account. Step 2 is what establishes that.
 Turn a stock Debian 13 (trixie) / GNOME 48 desktop into a ChromeOS Flex
 lookalike: a bottom shelf, the Google web apps as first-class icons, ChromeOS
 keybindings, a pruned app grid, and a matching pair of wallpapers. Written
-from — and matches — the customisation actually run on this Yoga 9 install.
+from — and matches — the customisation actually run on this Yoga Pro 9
+16IRP8 install.
 
 Unlike `stage`, this one is self-contained: no bucket, no gcloud, nothing
 private. Everything it touches lives under `$HOME` except the `repos` and

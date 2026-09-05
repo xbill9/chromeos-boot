@@ -172,8 +172,9 @@ wallpaper and the keybindings are live immediately.
   `Origin: Debian`, so third-party repos such as Chrome's and Docker's are
   left alone. `non-free-firmware` is not touched; the installer has enabled it
   since Debian 12. This is the one stage `bash flex revert` needs `sudo` for.
-- **`pkgs`** — Roboto, gnome-tweaks, unzip, `gh`, and Chrome if no
-  Chromium-family browser is already installed.
+- **`pkgs`** — Roboto, the croscore and Noto font sets, gnome-tweaks, unzip,
+  `gh`, and Chrome if no Chromium-family browser is already installed. Noto CJK
+  is 91MB and left out; `FONTS_CJK=1` adds it.
 - **`theme`** — adw-gtk3, light and dark, from the upstream release tarball
   (trixie has no package for it), so GTK3 apps match the libadwaita GTK4 ones.
 - **`icons`** — Papirus and Papirus-Dark, user-level.
@@ -227,6 +228,19 @@ wallpaper and the keybindings are live immediately.
   copy carrying `NoDisplay=true` — a copy, not a stub, so MIME associations
   and "Open with" still work. Nothing is uninstalled. GNOME Text Editor is
   renamed to "Text".
+- **`fonts`** — what Chrome puts on a *page*, as opposed to `look`, which sets
+  the desktop's own font. Chrome asks fontconfig what `sans-serif`, `serif` and
+  `monospace` mean; stock Debian answers DejaVu for all three, where ChromeOS
+  answers Arimo, Tinos and Cousine. `monospace` is the one that visibly breaks
+  — DejaVu Sans Mono is much wider and heavier than Cousine, so code blocks,
+  diffs and devtools all read wrong. The stage writes
+  `~/.config/fontconfig/conf.d/50-chromeos-flex.conf` pointing the generics at
+  the ChromeOS families, and pins grayscale antialiasing with slight hinting.
+  `system-ui` needs no rule: Chrome takes that from the GTK font, so `look`
+  already makes it Roboto. Set `FONT_SANS=Roboto` to have plain `sans-serif`
+  match the shelf rather than match ChromeOS — it is narrower than Arimo and
+  will reflow some pages. **Chrome reads fontconfig once at startup**, so this
+  one needs a Chrome restart, not a reload.
 - **`look`** — Roboto as the UI/document/titlebar font, text scaled to 1.2×,
   blue accent, no hot corners, time-only clock, one workspace, shelf
   favourites. The text scale is what makes **Chrome** readable: Chrome turns

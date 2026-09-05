@@ -39,7 +39,7 @@ step() { printf '    %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
 
-STAGES="repos pkgs theme icons shelf webapps appgrid look keys helpers claude wallpaper"
+STAGES="repos pkgs theme icons shelf webapps appgrid fonts look keys helpers claude wallpaper"
 
 # --- paths ----------------------------------------------------------------
 APPS=$HOME/.local/share/applications
@@ -50,6 +50,8 @@ BG=$HOME/.local/share/backgrounds
 HELPERS=$HOME/.local/share/chromeos-flex
 D2P=dash-to-panel@jderose9.github.com
 EXTDIR=$HOME/.local/share/gnome-shell/extensions/$D2P
+FONTCONF=$HOME/.config/fontconfig/conf.d
+FONTCONF_FILE=$FONTCONF/50-chromeos-flex.conf
 
 # Pinned to what was actually installed and tested on the first machine.
 # Override in the environment to move either one.
@@ -59,6 +61,18 @@ PAPIRUS_URL=${PAPIRUS_URL:-https://github.com/PapirusDevelopmentTeam/papirus-ico
 # How much to enlarge text desktop-wide.  1.0 is the GNOME default and is what
 # a machine with a sane DPI wants; set TEXT_SCALE=1.0 to leave the size alone.
 TEXT_SCALE=${TEXT_SCALE:-1.2}
+
+# What a page asking for plain `sans-serif` gets.  Arimo because that is the
+# file ChromeOS itself serves for Arial and for the generic -- it is Arial's
+# metrics, so pages laid out against Arial keep their line breaks.  Set
+# FONT_SANS=Roboto if you would rather the web matched the shelf than matched
+# ChromeOS; Roboto is narrower and will reflow some pages.
+FONT_SANS=${FONT_SANS:-Arimo}
+
+# Noto CJK is 91MB installed and only earns it if you read CJK -- Droid Sans
+# Fallback is already there and already keeps you out of tofu.  Off by default,
+# FONTS_CJK=1 to match what ChromeOS actually ships.
+FONTS_CJK=${FONTS_CJK:-0}
 
 # --- argument handling ----------------------------------------------------
 for a in "$@" ; do
@@ -192,7 +206,7 @@ stage_repos() {
 stage_pkgs() {
   log "pkgs: fonts, tweaks and a Chromium-family browser"
   if ! command -v sudo >/dev/null 2>&1 ; then
-    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto gnome-tweaks unzip gh"
+    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto fonts-croscore fonts-noto-core gnome-tweaks unzip gh"
     return
   fi
 
@@ -201,10 +215,28 @@ stage_pkgs() {
   # gnome-tweaks is how you inspect what this script did.  gh is trixie's own
   # package, so it needs no third-party repo -- 2.46 rather than upstream's
   # latest, which is the trade for having apt keep it current.
+  #
+  # croscore *is* the ChromeOS web font set: Arimo, Tinos and Cousine, the
+  # metric-compatible stand-ins for Arial, Times New Roman and Courier New that
+  # ChromeOS serves in place of all three.  Debian has Liberation, which is the
+  # same Steve Matteson design and metrically identical, so this is not about
+  # the shapes -- it is that the `fonts` stage can then point the generic
+  # families at the same files ChromeOS uses rather than at lookalikes.
+  # crosextra adds Carlito and Caladea (Calibri and Cambria), which ChromeOS
+  # also ships and which any Office document on the web asks for.
+  # noto-core is the coverage half: 42MB, and without it every `Noto Sans` in a
+  # font stack -- which is most of Google's own properties -- misses and falls
+  # through to DejaVu.
   sudo apt-get install -y -qq \
       fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip gh \
+      fonts-croscore fonts-crosextra-carlito fonts-crosextra-caladea \
+      fonts-noto-core \
       apt-transport-https ca-certificates gnupg \
     || warn "some packages failed -- check the output above"
+  if [ "$FONTS_CJK" = 1 ] ; then
+    step "fonts: adding Noto CJK (~91MB)"
+    sudo apt-get install -y -qq fonts-noto-cjk || warn "fonts-noto-cjk failed"
+  fi
 
   if [ -n "$BROWSER" ] ; then
     step "browser: $BROWSER already installed"
@@ -606,6 +638,132 @@ stage_appgrid() {
       step "GNOME Text Editor renamed to Text"
   fi
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
+}
+
+####################################################################### fonts
+# Web text, not UI text -- `look` sets the GNOME font, this sets what Chrome
+# puts on a page.
+#
+# The gap this closes is the generic families.  Chrome asks fontconfig what
+# `sans-serif`, `serif` and `monospace` mean, and on stock Debian the answer is
+# DejaVu for all three; on ChromeOS it is the croscore trio.  DejaVu Sans Mono
+# in particular is far wider and heavier than Cousine, so every code block,
+# diff and devtools panel reads wrong even when the page's own fonts are right.
+#
+# Measured on 2026-09-05 by fingerprinting canvas measureText widths against
+# each candidate family, before and after:
+#
+#   generic       stock Debian        after            native ChromeOS
+#   sans-serif    Liberation Sans     Arimo            Arimo
+#   serif         Liberation Serif    Tinos            Tinos
+#   monospace     DejaVu Sans Mono    Cousine          Cousine
+#   system-ui     Roboto              Roboto           Roboto
+#
+# sans-serif and serif were already metrically right -- Liberation and croscore
+# are the same design -- so those two lines are about serving the same files,
+# not about fixing a visible break.  monospace is the one that was actually
+# wrong.
+#
+# system-ui needs no rule: Chrome takes it from the GTK font rather than from
+# fontconfig, so `look` setting font-name to Roboto 11 is already what makes it
+# Roboto.  A headless Chrome has no GTK and does fall through to fontconfig --
+# which is a good way to mislead yourself when testing this.
+stage_fonts() {
+  log "fonts: ChromeOS web font mapping"
+
+  # Rendering first, because it costs nothing and does not depend on the fonts
+  # being installed.  Both of these are already the Debian default; setting
+  # them explicitly is for the machine where they are not, since full hinting
+  # is the single most un-ChromeOS thing a desktop can do to text.  ChromeOS is
+  # grayscale antialiasing with slight hinting, which leaves the glyph outlines
+  # alone and lets Skia place them on subpixel positions.
+  gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale'
+  gsettings set org.gnome.desktop.interface font-hinting 'slight'
+  step "grayscale antialiasing, slight hinting"
+
+  # Subpixel *positioning* is the other half of why ChromeOS text looks smoother
+  # and it is not a setting: Chrome turns it on when the device scale factor is
+  # not a whole number, which TEXT_SCALE=1.2 in `look` already arranges.  A
+  # machine running TEXT_SCALE=1.0 gets integer glyph advances and slightly
+  # lumpier spacing, and there is no knob that separates the two.
+  case $TEXT_SCALE in
+    1|1.0|1.00) step "TEXT_SCALE is $TEXT_SCALE -- no subpixel glyph positioning in Chrome" ;;
+  esac
+
+  if ! fc-list : family 2>/dev/null | tr ',' '\n' | grep -qix 'Arimo' ; then
+    warn "croscore not installed -- \`sudo apt install fonts-croscore\`, then \`bash flex fonts\`"
+    warn "writing the mapping anyway; it takes effect once the fonts are there"
+  fi
+
+  mkdir -p "$FONTCONF" || { warn "cannot create $FONTCONF"; return; }
+
+  # Rewritten every run rather than appended to, which is what makes the stage
+  # idempotent.  50- so it sorts inside the user directory ahead of nothing in
+  # particular -- the ordering that matters is that /etc/fonts/conf.d/50-user.conf
+  # pulls this whole directory in at position 50, before 60-latin.conf names
+  # DejaVu.  `prefer` inserts ahead of the family it matched, so getting in
+  # first is the whole trick; a file that ran after 60-latin would land behind
+  # DejaVu no matter what it said.
+  cat > "$FONTCONF_FILE" <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<!-- Written by \`flex fonts\`.  Removed by \`flex revert\`. -->
+<fontconfig>
+  <!-- The ChromeOS trio, with Noto behind each one for the scripts croscore
+       does not cover.  Roboto sits behind sans-serif rather than in front of
+       it: it is the UI font, and a page that asked for a generic asked for
+       Arial's metrics. -->
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>$FONT_SANS</family>
+      <family>Roboto</family>
+      <family>Noto Sans</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>serif</family>
+    <prefer>
+      <family>Tinos</family>
+      <family>Noto Serif</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>Cousine</family>
+      <family>Noto Sans Mono</family>
+    </prefer>
+  </alias>
+
+  <!-- CSS4 generics.  Chrome passes these through to fontconfig verbatim
+       instead of resolving them itself, and they are unknown families here, so
+       without this a Tailwind page falls all the way through its font stack. -->
+  <alias>
+    <family>ui-sans-serif</family>
+    <prefer><family>Roboto</family><family>$FONT_SANS</family></prefer>
+  </alias>
+  <alias>
+    <family>ui-serif</family>
+    <prefer><family>Tinos</family></prefer>
+  </alias>
+  <alias>
+    <family>ui-monospace</family>
+    <prefer><family>Cousine</family></prefer>
+  </alias>
+</fontconfig>
+EOF
+  step "generics mapped: sans-serif -> $FONT_SANS, serif -> Tinos, monospace -> Cousine"
+
+  # -f rather than a plain rebuild: the package installs above dropped new
+  # families in and the cache for those directories is stale either way.
+  command -v fc-cache >/dev/null 2>&1 && fc-cache -f >/dev/null 2>&1
+  step "font cache rebuilt"
+
+  # Chrome reads fontconfig once, at startup, and nothing short of a restart
+  # makes it look again -- worth saying, because the obvious test is to reload
+  # a tab, which shows no change and reads like the stage did nothing.
+  step "restart Chrome to pick this up (a reload will not do it)"
 }
 
 ######################################################################## look
@@ -1338,7 +1496,7 @@ do_revert() {
   # Reset, not restore: these go back to the GNOME defaults, which is not
   # necessarily what you had before running this.
   for s in \
-    "org.gnome.desktop.interface color-scheme gtk-theme icon-theme font-name document-font-name text-scaling-factor accent-color clock-show-date enable-hot-corners" \
+    "org.gnome.desktop.interface color-scheme gtk-theme icon-theme font-name document-font-name text-scaling-factor font-antialiasing font-hinting accent-color clock-show-date enable-hot-corners" \
     "org.gnome.desktop.wm.preferences button-layout titlebar-font num-workspaces" \
     "org.gnome.desktop.wm.keybindings minimize toggle-maximized switch-windows switch-windows-backward switch-applications switch-applications-backward switch-to-workspace-left switch-to-workspace-right" \
     "org.gnome.mutter dynamic-workspaces workspaces-only-on-primary" \
@@ -1417,6 +1575,17 @@ do_revert() {
     fi
   done
   rm -f "$BG/chromeos-element-light.png" "$BG/chromeos-element-dark.png"
+  # Only our own file; the directory is shared with whatever else the user has
+  # put there, so it is removed only if taking our file out emptied it.
+  if [ -f "$FONTCONF_FILE" ] ; then
+    rm -f "$FONTCONF_FILE"
+    rmdir "$FONTCONF" "${FONTCONF%/conf.d}" 2>/dev/null
+    command -v fc-cache >/dev/null 2>&1 && fc-cache -f >/dev/null 2>&1
+    step "font mapping removed (generics go back to the system default)"
+  fi
+  # The croscore and Noto packages are left installed.  They are shared, they
+  # break nothing by being present, and apt is not this script's to undo --
+  # same argument as google-chrome.list above.
   rm -rf "$HELPERS"
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
   step "launchers, icons, wallpapers and helpers removed"
@@ -1461,7 +1630,8 @@ do_revert() {
     ~/.local/share/themes/adw-gtk3*        the GTK theme
     ~/.local/share/icons/Papirus*          the icon theme
     ~/.local/share/gnome-shell/extensions/dash-to-panel@jderose9.github.com
-    fonts-roboto, gnome-tweaks, gh, google-chrome-stable   (apt)
+    fonts-roboto, fonts-croscore, fonts-noto-core, gnome-tweaks, gh,
+    google-chrome-stable   (apt)
     /etc/apt/sources.list.d/google-chrome.list   the Chrome repo
     anything installed from contrib or non-free  (apt)
 
@@ -1484,7 +1654,9 @@ cat <<'DONE'
 
   Wayland cannot restart gnome-shell in place, so the shelf, the GTK theme and
   the app grid are all still the old ones until the session restarts.  The
-  wallpaper and the keybindings are already live.
+  wallpaper and the keybindings are already live.  Chrome reads fontconfig
+  once at startup, so the web fonts need it restarted -- logging out does
+  that too.
 
   Afterwards:
 

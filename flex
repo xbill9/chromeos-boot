@@ -669,6 +669,32 @@ stage_look() {
 # ChromeOS keyboard.  The one that matters most is Caps Lock: on a Chromebook
 # that key is the Launcher, and every shortcut below is built around it being
 # Super.
+
+# GNOME keeps its custom shortcuts as a list of dconf paths, with the keys at
+# each path in a relocatable schema.  Both `keys` and `revert` have to walk that
+# list -- one to find a free slot, the other to take its own entry back out --
+# so the parse and the "is this one ours?" test live here, once.
+CK_BASE=/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+MK=org.gnome.settings-daemon.plugins.media-keys
+CKS=$MK.custom-keybinding
+
+# Space separated rather than one per line: dconf paths cannot contain a space,
+# and the callers want to word-split it and to pattern-match it as one string.
+ck_paths() {
+  python3 -c '
+import ast,sys
+raw=sys.argv[1].strip()
+print(" ".join([] if raw in ("@as []", "[]") else ast.literal_eval(raw)))
+' "$1" 2>/dev/null
+}
+
+# Matched on the pair `keys` writes, not on the slot number -- which was never
+# this script's to assume.  Takes a full schema:path.
+ck_is_ours() {
+  [ "`gsettings get "$1" name 2>/dev/null`"    = "'Terminal'" ] &&
+  [ "`gsettings get "$1" command 2>/dev/null`" = "'gnome-terminal'" ]
+}
+
 stage_keys() {
   log "keys: ChromeOS keyboard"
 
@@ -707,9 +733,28 @@ stage_keys() {
 
   # Ctrl+Alt+T for a terminal, as in Chrome.  Appended to whatever custom
   # bindings already exist rather than replacing the list.
+  #
+  # The slot is searched for, never assumed to be custom0.  GNOME hands custom0
+  # to the first shortcut anyone adds by hand, so writing ours there
+  # unconditionally overwrites theirs -- silently, because the path is by then
+  # already in the list and the append below finds nothing left to do.  Reuse
+  # the slot already holding our own binding if there is one, which is what
+  # keeps a re-run a no-op even once the user has retuned the key, and
+  # otherwise take the lowest number nobody is using.
   if command -v gnome-terminal >/dev/null 2>&1 ; then
-    ck=/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/
-    cur=`gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings`
+    cur=`gsettings get $MK custom-keybindings`
+    paths=`ck_paths "$cur"`
+    ck=""
+    for p in $paths ; do
+      ck_is_ours "$CKS:$p" && { ck=$p; break; }
+    done
+    if [ -z "$ck" ] ; then
+      n=0
+      while : ; do
+        ck=$CK_BASE/custom$n/
+        case " $paths " in *" $ck "*) n=$((n+1)) ;; *) break ;; esac
+      done
+    fi
     new=`python3 -c '
 import ast,sys
 raw=sys.argv[1].strip()
@@ -719,12 +764,11 @@ if p not in cur: cur.append(p)
 print("[" + ", ".join(repr(x) for x in cur) + "]")
 ' "$cur" "$ck" 2>/dev/null`
     if [ -n "$new" ] ; then
-      gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$new"
-      s=org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$ck
-      gsettings set "$s" name 'Terminal'
-      gsettings set "$s" command 'gnome-terminal'
-      gsettings set "$s" binding '<Control><Alt>t'
-      step "Ctrl+Alt+T opens a terminal"
+      gsettings set $MK custom-keybindings "$new"
+      gsettings set "$CKS:$ck" name 'Terminal'
+      gsettings set "$CKS:$ck" command 'gnome-terminal'
+      gsettings set "$CKS:$ck" binding '<Control><Alt>t'
+      step "Ctrl+Alt+T opens a terminal (${ck##*/custom-keybindings/})"
     fi
   fi
 }
@@ -1018,12 +1062,12 @@ do_revert() {
     "org.gnome.mutter dynamic-workspaces workspaces-only-on-primary" \
     "org.gnome.mutter.keybindings toggle-tiled-left toggle-tiled-right" \
     "org.gnome.shell.keybindings toggle-overview show-screenshot-ui" \
-    "org.gnome.settings-daemon.plugins.media-keys logout custom-keybindings" \
+    "org.gnome.settings-daemon.plugins.media-keys logout" \
     "org.gnome.desktop.input-sources xkb-options" \
     "org.gnome.desktop.background picture-uri picture-uri-dark picture-options primary-color secondary-color color-shading-type" \
     "org.gnome.desktop.screensaver picture-uri picture-options primary-color secondary-color color-shading-type" \
     "org.gnome.nautilus.preferences default-folder-viewer" \
-    "org.gnome.shell favorite-apps" ; do
+    "org.gnome.shell favorite-apps disabled-extensions" ; do
     set -- $s
     schema=$1; shift
     for k in "$@" ; do gsettings reset "$schema" "$k" 2>/dev/null; done
@@ -1031,6 +1075,28 @@ do_revert() {
   [ -d "$EXTDIR/schemas" ] &&
     gsettings --schemadir "$EXTDIR/schemas" reset-recursively org.gnome.shell.extensions.dash-to-panel 2>/dev/null
   step "gsettings reset"
+
+  # The Ctrl+Alt+T entry comes out by identity rather than by resetting the
+  # whole custom-keybindings list: `keys` appended to that list, and anything
+  # else in it is the user's own shortcut, not debris of ours.  The keys at the
+  # path are a relocatable schema and outlive a reset of the list -- GNOME then
+  # hands that slot, name, command and binding intact, to the next shortcut
+  # anyone adds -- so the path itself has to be reset as well.
+  cur=`gsettings get $MK custom-keybindings`
+  keep=""
+  for p in `ck_paths "$cur"` ; do
+    if ck_is_ours "$CKS:$p" ; then
+      gsettings reset-recursively "$CKS:$p" 2>/dev/null
+      step "Ctrl+Alt+T removed (${p##*/custom-keybindings/})"
+    else
+      keep="$keep${keep:+, }'$p'"
+    fi
+  done
+  if [ -n "$keep" ] ; then
+    gsettings set $MK custom-keybindings "[$keep]"
+  else
+    gsettings reset $MK custom-keybindings 2>/dev/null
+  fi
 
   # dash-to-dock is the Debian package and the thing that was there before.
   if [ -d /usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com ] ; then

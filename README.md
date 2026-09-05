@@ -266,8 +266,10 @@ root; read it before running it.
 GNOME defaults (not to whatever they were before — this doesn't snapshot
 prior values) and removes the launchers, icons, wallpapers and helper
 scripts it created, plus the `contrib`/`non-free` sources file — the one
-part that asks for a password. adw-gtk3, Papirus, dash-to-panel, Chrome's
-apt repo and any apt packages are left in place, since removing them isn't
-really an "undo" either. Anything already installed *from* `contrib` or
-`non-free` stays installed, and stops getting updates, so uninstall it
-first if you care.
+part that asks for a password. Custom keyboard shortcuts are the exception
+to the reset: only the Ctrl+Alt+T entry `keys` added is taken out, matched
+by name and command, so shortcuts you added yourself keep working.
+adw-gtk3, Papirus, dash-to-panel, Chrome's apt repo and any apt packages
+are left in place, since removing them isn't really an "undo" either.
+Anything already installed *from* `contrib` or `non-free` stays installed,
+and stops getting updates, so uninstall it first if you care.

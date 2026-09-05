@@ -17,12 +17,14 @@
 # and naming a stage is how you repair it without redoing the rest.  The two
 # slow ones are `icons` (a ~60MB icon theme) and `wallpaper` (~9s per render).
 #
-# Nothing here needs root except `pkgs`, which is apt and is non-fatal: a
-# machine without sudo is customised all the same, minus the packages.  The
-# boot splash does need root, so it is installed as a script under
-# ~/.local/share/chromeos-flex and deliberately not run -- read it first.
+# Nothing here needs root except `repos` and `pkgs`, which are apt and are
+# non-fatal: a machine without sudo is customised all the same, minus the
+# components and the packages.  The boot splash does need root, so it is
+# installed as a script under ~/.local/share/chromeos-flex and deliberately
+# not run -- read it first.
 #
-# Everything else lives under $HOME and comes back out with `bash flex revert`.
+# Everything else lives under $HOME and comes back out with `bash flex revert`,
+# which also removes the one file `repos` writes outside it.
 # Note that revert *resets* the settings it touched rather than restoring what
 # was there before: they go to the GNOME defaults, not to your old values.
 #
@@ -37,7 +39,7 @@ step() { printf '    %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fail]\033[0m %s\n' "$*" >&2; exit 1; }
 
-STAGES="pkgs theme icons shelf webapps appgrid look keys helpers wallpaper"
+STAGES="repos pkgs theme icons shelf webapps appgrid look keys helpers wallpaper"
 
 # --- paths ----------------------------------------------------------------
 APPS=$HOME/.local/share/applications
@@ -64,7 +66,7 @@ for a in "$@" ; do
     -l|--list)  printf '%s\n' $STAGES; exit 0 ;;
     --light)    mode=light ;;
     --dark)     mode=dark ;;
-    -h|--help)  sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)  sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     revert)     want=revert ;;
     -*)         die "$a: unknown option (try -h)" ;;
     *)          case " $STAGES " in
@@ -95,21 +97,112 @@ for b in google-chrome-stable google-chrome chromium chromium-browser ; do
   command -v "$b" >/dev/null 2>&1 && { BROWSER=$b; break; }
 done
 
+####################################################################### repos
+# contrib and non-free.  Debian enables main and, since 12, non-free-firmware;
+# everything else -- the Microsoft fonts, unrar, the nvidia drivers, most of
+# what a laptop wants and cannot legally sit in main -- is out of apt's reach
+# until these two components are turned on.  non-free-firmware is left alone
+# on purpose: the installer has enabled it since 12, and a machine that has
+# deliberately removed it is not one to second-guess here.
+#
+# This writes a separate sources file rather than editing the distro's own.
+# Trixie writes deb822 (/etc/apt/sources.list.d/debian.sources) on a fresh
+# install but a machine upgraded from bookworm still has the one-line
+# /etc/apt/sources.list, and sed-ing whichever one is present is neither
+# reliably idempotent nor undoable.  apt merges by (URI, suite, component), so
+# a second entry naming the same archive with only the extra components is the
+# supported way to do this -- and revert is `rm` rather than an unpick.
+#
+# The (URI, suite) pairs come from `apt-get indextargets`, which reports what
+# apt actually resolved whichever format it was written in, tagged with the
+# Origin from the fetched Release file.  Filtering on Origin: Debian is what
+# keeps contrib and non-free off dl.google.com and download.docker.com, where
+# they do not exist and every later `apt update` would report a 404.
+NONFREE_LIST=/etc/apt/sources.list.d/chromeos-flex-nonfree.sources
+NONFREE_COMPONENTS="contrib non-free"
+DEBIAN_KEYRING=/usr/share/keyrings/debian-archive-keyring.gpg
+
+stage_repos() {
+  log "repos: enabling $NONFREE_COMPONENTS"
+  if ! command -v sudo >/dev/null 2>&1 ; then
+    warn "no sudo -- skipping.  Enable them by hand: sudo apt edit-sources"
+    return
+  fi
+
+  # Origin is read from the Release files under /var/lib/apt/lists, so this
+  # wants a machine that has run `apt update` at least once.  Any installed
+  # Debian has; a stripped container may not, hence warn rather than die.
+  src=`apt-get indextargets --format '$(REPO_URI)|$(RELEASE)|$(COMPONENT)|$(TARGET_OF)|$(ORIGIN)' 2>/dev/null |
+       awk -F'|' '$5 == "Debian" && $3 == "main" { print $4, $1, $2 }' | sort -u`
+  if [ -z "$src" ] ; then
+    warn "no Debian archives in apt's sources -- run \`sudo apt-get update\` and retry"
+    return
+  fi
+
+  tmp=`mktemp` || { warn "cannot create temp file"; return; }
+  # One stanza per (URI, suite) pair, in sorted order, so an unchanged machine
+  # produces a byte-identical file and the cmp below can skip the update.
+  # deb-src is mirrored only where the machine already has it: a box with no
+  # source entries does not want them appearing for non-free alone.
+  {
+    printf '# Written by `bash flex repos`; removed by `bash flex revert`.\n'
+    printf '# The Debian archives this machine already uses, with the\n'
+    printf '# %s components added.  Edit `flex`, not this file.\n' "$NONFREE_COMPONENTS"
+    printf '%s\n' "$src" | awk '{ print $2, $3 }' | sort -u | while read -r uri suite ; do
+      types=`printf '%s\n' "$src" | awk -v u="$uri" -v s="$suite" '$2 == u && $3 == s { printf " %s", $1 }'`
+      printf '\nTypes:%s\nURIs: %s\nSuites: %s\nComponents: %s\n' \
+             "$types" "$uri" "$suite" "$NONFREE_COMPONENTS"
+      # Without Signed-By apt falls back to every key in trusted.gpg.d, which
+      # is what the legacy one-line entries do; naming the archive keyring
+      # matches what trixie's own deb822 file says.
+      [ -f "$DEBIAN_KEYRING" ] && printf 'Signed-By: %s\n' "$DEBIAN_KEYRING"
+    done
+  } > "$tmp"
+
+  if cmp -s "$tmp" "$NONFREE_LIST" ; then
+    step "$NONFREE_LIST already current"
+    rm -f "$tmp"
+  else
+    if sudo install -m 644 "$tmp" "$NONFREE_LIST" ; then
+      step "wrote $NONFREE_LIST"
+    else
+      warn "cannot write $NONFREE_LIST -- skipping"
+      rm -f "$tmp"
+      return
+    fi
+    rm -f "$tmp"
+    sudo apt-get update -qq || warn "apt update failed -- components configured but not fetched"
+  fi
+
+  # Verify rather than assume: a partial local mirror can carry main and not
+  # contrib, which leaves a valid-looking file and a 404 on every update.
+  have=`apt-get indextargets --format '$(COMPONENT)|$(ORIGIN)' 2>/dev/null |
+        awk -F'|' '$2 == "Debian" { print $1 }' | sort -u`
+  for c in $NONFREE_COMPONENTS ; do
+    case " `printf '%s ' $have` " in
+      *" $c "*) step "$c: available" ;;
+      *)        warn "$c: not fetched -- check \`sudo apt-get update\`" ;;
+    esac
+  done
+}
+
 ######################################################################## pkgs
 # apt.  Non-fatal in every direction: no sudo, no network, no repo -- warn and
 # carry on, the rest of the script is user-level and does not need any of it.
 stage_pkgs() {
   log "pkgs: fonts, tweaks and a Chromium-family browser"
   if ! command -v sudo >/dev/null 2>&1 ; then
-    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto gnome-tweaks unzip"
+    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto gnome-tweaks unzip gh"
     return
   fi
 
   sudo apt-get update -qq || { warn "apt update failed -- skipping packages"; return; }
   # Roboto is the ChromeOS UI font and the one thing here that is load-bearing;
-  # gnome-tweaks is how you inspect what this script did.
+  # gnome-tweaks is how you inspect what this script did.  gh is trixie's own
+  # package, so it needs no third-party repo -- 2.46 rather than upstream's
+  # latest, which is the trade for having apt keep it current.
   sudo apt-get install -y -qq \
-      fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip \
+      fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip gh \
       apt-transport-https ca-certificates gnupg \
     || warn "some packages failed -- check the output above"
 
@@ -974,6 +1067,21 @@ do_revert() {
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" 2>/dev/null
   step "launchers, icons, wallpapers and helpers removed"
 
+  # The one root-owned file flex writes outside $HOME, and the only part of
+  # revert that wants a password.  Taking it back only narrows apt's view, so
+  # it is safe in a way that removing google-chrome.list would not be -- that
+  # one is left, because it is what keeps an installed Chrome updated.
+  # Packages already installed from contrib or non-free stay installed, and
+  # stay unupgradable, which is the argument for removing them first.
+  if [ -f "$NONFREE_LIST" ] ; then
+    if command -v sudo >/dev/null 2>&1 && sudo rm -f "$NONFREE_LIST" ; then
+      step "$NONFREE_LIST removed"
+      sudo apt-get update -qq 2>/dev/null || warn "apt update failed -- harmless, it retries"
+    else
+      warn "cannot remove $NONFREE_LIST -- \`sudo rm\` it by hand"
+    fi
+  fi
+
   cat <<'REVDONE'
 
   Reverted.  Log out and back in.
@@ -982,7 +1090,9 @@ do_revert() {
     ~/.local/share/themes/adw-gtk3*        the GTK theme
     ~/.local/share/icons/Papirus*          the icon theme
     ~/.local/share/gnome-shell/extensions/dash-to-panel@jderose9.github.com
-    fonts-roboto, gnome-tweaks, google-chrome-stable   (apt)
+    fonts-roboto, gnome-tweaks, gh, google-chrome-stable   (apt)
+    /etc/apt/sources.list.d/google-chrome.list   the Chrome repo
+    anything installed from contrib or non-free  (apt)
 
 REVDONE
 }

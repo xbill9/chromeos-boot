@@ -10,3 +10,8 @@ disable=SC2006
 
 # `set -- $s` in do_revert splits the schema/key lists on whitespace on purpose.
 disable=SC2086
+
+# `apt-get indextargets --format` in stage_repos takes apt's own `$(FIELD)`
+# syntax, which has to reach apt unexpanded, and the same stage printf's
+# backticked prose into the sources file it writes.
+disable=SC2016

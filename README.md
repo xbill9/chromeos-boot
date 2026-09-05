@@ -120,9 +120,9 @@ keybindings, a pruned app grid, and a matching pair of wallpapers. Written
 from — and matches — the customisation actually run on this Yoga 9 install.
 
 Unlike `stage`, this one is self-contained: no bucket, no gcloud, nothing
-private. Everything it touches lives under `$HOME` except the `pkgs` stage
-(apt, and non-fatal without sudo) and `boot-splash.sh`, a script it installs
-but never runs, since that one edits GRUB.
+private. Everything it touches lives under `$HOME` except the `repos` and
+`pkgs` stages (apt, and non-fatal without sudo) and `boot-splash.sh`, a
+script it installs but never runs, since that one edits GRUB.
 
 ### Display manager
 
@@ -160,8 +160,19 @@ wallpaper and the keybindings are live immediately.
 
 ### Stages
 
-- **`pkgs`** — Roboto, gnome-tweaks, unzip, and Chrome if no Chromium-family
-  browser is already installed.
+- **`repos`** — turns on the `contrib` and `non-free` apt components, which is
+  what puts the Microsoft fonts, `unrar` and the proprietary drivers within
+  apt's reach. It adds a separate file,
+  `/etc/apt/sources.list.d/chromeos-flex-nonfree.sources`, naming the Debian
+  archives the machine already uses with only the extra components, rather
+  than rewriting the distro's own sources — which are deb822 on a fresh trixie
+  and one-line on one upgraded from bookworm, and awkward to undo either way.
+  The archives are read back from `apt-get indextargets` and filtered on
+  `Origin: Debian`, so third-party repos such as Chrome's and Docker's are
+  left alone. `non-free-firmware` is not touched; the installer has enabled it
+  since Debian 12. This is the one stage `bash flex revert` needs `sudo` for.
+- **`pkgs`** — Roboto, gnome-tweaks, unzip, `gh`, and Chrome if no
+  Chromium-family browser is already installed.
 - **`theme`** — adw-gtk3, light and dark, from the upstream release tarball
   (trixie has no package for it), so GTK3 apps match the libadwaita GTK4 ones.
 - **`icons`** — Papirus and Papirus-Dark, user-level.
@@ -253,5 +264,9 @@ root; read it before running it.
 `bash flex revert` resets every setting this script touched back to the
 GNOME defaults (not to whatever they were before — this doesn't snapshot
 prior values) and removes the launchers, icons, wallpapers and helper
-scripts it created. adw-gtk3, Papirus, dash-to-panel and any apt packages
-are left in place, since removing them isn't really an "undo" either.
+scripts it created, plus the `contrib`/`non-free` sources file — the one
+part that asks for a password. adw-gtk3, Papirus, dash-to-panel, Chrome's
+apt repo and any apt packages are left in place, since removing them isn't
+really an "undo" either. Anything already installed *from* `contrib` or
+`non-free` stays installed, and stops getting updates, so uninstall it
+first if you care.

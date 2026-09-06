@@ -50,7 +50,8 @@ bootstrap
 bootstrap code
 ```
 
-- **`stage`** — gcloud, login, then `~/bin` and the dotfiles out of the bucket.
+- **`stage`** — gcloud, login, then `~/bin` and the dotfiles out of the bucket,
+  and finally the phone tools.
 - **`exec bash -l`** — load-bearing, and easy to skip. `bootstrap` is a shell
   function defined in the `.bashrc` that `stage` has just fetched, so it does
   not exist until a new login shell reads it.
@@ -80,6 +81,8 @@ Two things then need the steps above to have finished:
    everything else.
 4. Replaces the tarball with the apt-managed `google-cloud-cli` in `/usr/bin`,
    then deletes `~/google-cloud-sdk`.
+5. Installs the phone tools — `adb`, `fastboot` and the libimobiledevice
+   utilities — and puts you in the `plugdev` group.
 
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
@@ -104,6 +107,32 @@ the tarball and leaves the job to `bootstrap gcloud`.
 Credentials live in `~/.config/gcloud`, a separate directory shared by both
 copies, so you log in exactly once and removing the tarball does not log you
 out.
+
+### Phone tools
+
+Step 5 installs `adb` and `fastboot` for Android, and `usbmuxd`,
+`libimobiledevice-utils` and `ifuse` for iPhones, plus `usbutils` for `lsusb`.
+All of it from Debian rather than from Google's or libimobiledevice's own
+builds: the distro packages lag a release or two but they are the ones apt
+keeps current, and both protocols tolerate an older client talking to a newer
+phone.
+
+`android-sdk-platform-tools-common` is in the list for its udev rules alone.
+Without them `adb devices` reports `no permissions` for everything it sees.
+The rules hand each device to `uaccess` and to the `plugdev` group; `uaccess`
+does nothing in Crostini, which has no logind seat, so `plugdev` is what
+actually grants access — which is why the step adds you to it. Like the
+docker group, that needs a log out and back in.
+
+Like step 4, this one is non-fatal: without `sudo`, or with apt unreachable,
+it warns and carries on, and re-running `stage` installs the tools later.
+
+Then there is the part no script can do. A phone plugged into the Chromebook
+belongs to ChromeOS, not to the container, until you share it across from
+ChromeOS Settings, under the Linux development environment, **Manage USB
+devices** — and it has to be re-shared after every unplug. Once it is
+shared, `adb devices` should list an Android handset and `ideviceinfo` should
+answer for an iPhone; `lsusb` is the thing to check when neither does.
 
 ### Bucket
 

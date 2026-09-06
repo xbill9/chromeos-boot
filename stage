@@ -25,6 +25,10 @@
 # date.  The tarball is removed once the packaged one answers.  Credentials
 # live in ~/.config/gcloud and are shared by both, so you only ever log in
 # once.
+#
+# Last comes a set of phone tools -- adb, fastboot and the libimobiledevice
+# utilities -- so a handset plugged into the Chromebook is usable from the
+# container.  Non-fatal like the apt gcloud, and skipped without sudo.
 
 bucket=${1:-${BUCKET:-gs://stage.ticket.w5.glitnirticketing.com}}
 sdk=$HOME/google-cloud-sdk
@@ -140,6 +144,63 @@ case $gcloud in
     log "apt gcloud: gcloud already came from PATH ($gcloud) -- nothing to install" ;;
 esac
 
+# --- phone tools ----------------------------------------------------------
+# adb and fastboot for Android, the libimobiledevice family for iPhones, all
+# out of Debian rather than Google's or libimobiledevice's own builds.  The
+# distro packages lag a release or two, but they are the ones apt keeps
+# current, and both protocols are stable enough that an older client talks to
+# a newer phone.
+#
+# Non-fatal for the same reason the apt gcloud above is: a container with no
+# sudo or no network is staged all the same, and re-running stage installs
+# these later.
+apt_phone_tools() {
+  # Repeated from apt_gcloud on purpose -- that function is skipped entirely
+  # when gcloud already came from PATH, so the lists may never have been
+  # fetched in this run.
+  sudo apt-get update -qq || return 1
+  # android-sdk-platform-tools-common is nothing but udev rules, and they are
+  # the part that matters: without them adb reports "no permissions" for
+  # every device it sees.  The rules hand the device to both uaccess and the
+  # plugdev group; uaccess is a no-op in Crostini, which has no logind seat,
+  # so plugdev is what actually grants access -- hence the group add below.
+  #
+  # usbmuxd is the daemon every iPhone tool talks to, ideviceinfo and
+  # idevicebackup2 are in libimobiledevice-utils, and ifuse mounts the camera
+  # roll over FUSE.  usbutils is there for lsusb, which is the first thing to
+  # run when a device does not appear at all.
+  sudo apt-get install -y -qq \
+    adb fastboot android-sdk-platform-tools-common \
+    usbmuxd libimobiledevice-utils ifuse usbutils || return 1
+}
+
+log "phone tools: adb, fastboot and the libimobiledevice utilities"
+if ! command -v sudo >/dev/null 2>&1 ; then
+  warn "phone tools: no sudo on this container -- skipping, re-run \`bash stage\` later"
+elif apt_phone_tools ; then
+  # dpkg rather than `ideviceinfo --version`: the option spelling has moved
+  # around between libimobiledevice releases, and asking dpkg cannot end up
+  # printing a usage message into the log line.
+  log "phone tools: `adb version 2>/dev/null | head -1`"
+  log "phone tools: libimobiledevice `dpkg-query -W -f='${Version}' libimobiledevice-utils 2>/dev/null`"
+  # usermod is idempotent, so this only ever runs once in practice.  Guarded
+  # on the group existing rather than creating it: plugdev comes from the
+  # platform-tools package above, and inventing it here would give the udev
+  # rules a group they were not written against.
+  me=`id -un`
+  if ! getent group plugdev >/dev/null 2>&1 ; then
+    warn "phone tools: no plugdev group -- adb may report \"no permissions\""
+  elif id -nG "$me" | tr ' ' '\n' | grep -qx plugdev ; then
+    log "phone tools: $me is already in plugdev"
+  elif sudo usermod -aG plugdev "$me" ; then
+    log "phone tools: added $me to plugdev -- log out and back in to pick it up"
+  else
+    warn "phone tools: could not add $me to plugdev -- adb will report \"no permissions\""
+  fi
+else
+  warn "phone tools: install failed -- retry with \`bash stage\`"
+fi
+
 cat <<'DONE'
 
   Staged.  Two commands left:
@@ -149,7 +210,14 @@ cat <<'DONE'
 
   gcloud is already the apt-managed one, so `bootstrap`'s gcloud stage is a
   no-op.  Then `bootstrap code` for the repos, and log out and back in once
-  for the docker group.  Re-run `nnn` after `bootstrap code` to link
-  make-resume and md2docx.py, which point into ~/resume.
+  for the docker group -- and for plugdev, if adb was just installed.  Re-run
+  `nnn` after `bootstrap code` to link make-resume and md2docx.py, which point
+  into ~/resume.
+
+  Phones need one step this script cannot do for you: share the handset into
+  the container from ChromeOS Settings, under the Linux development
+  environment, "Manage USB devices".  That has to be redone after each
+  unplug.  Then `adb devices` for Android, `ideviceinfo` for an iPhone -- and
+  `lsusb` when neither sees anything.
 
 DONE

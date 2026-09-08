@@ -10,5 +10,6 @@ What is in it:
 - Boot went 39.324 s → 27.144 s, of which −10.9 s is attributable — 5.238 s of GRUB timeout and 5.685 s of NetworkManager-wait-online — with the untouched phases drifting −1.255 s as noise.
 
 dev.to \(Google Developer Experts\): https://dev.to/gde/the-desktop-looked-right-2093-parse-errors-a-boot-and-109-seconds-that-werent-doing-anything-4bb
+AWS Builder Center: https://builder.aws.com/content/3J3gsf7GNLfELS90lPMU24Klikt/the-desktop-looked-right-2093-parse-errors-a-boot-and-109-seconds-that-werent-doing-anything
 Medium: https://xbill999.medium.com/the-desktop-looked-right-2-093-parse-errors-a-boot-and-10-9-seconds-that-werent-doing-anything-6ee14ee14914
 Source: https://github.com/xbill9/chromeos-boot

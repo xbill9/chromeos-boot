@@ -1,3 +1,4 @@
+builder = https://builder.aws.com/content/3J3gsf7GNLfELS90lPMU24Klikt/the-desktop-looked-right-2093-parse-errors-a-boot-and-109-seconds-that-werent-doing-anything
 devto-gde = https://dev.to/gde/the-desktop-looked-right-2093-parse-errors-a-boot-and-109-seconds-that-werent-doing-anything-4bb
 medium = https://xbill999.medium.com/the-desktop-looked-right-2-093-parse-errors-a-boot-and-10-9-seconds-that-werent-doing-anything-6ee14ee14914
 repo = https://github.com/xbill9/chromeos-boot

@@ -1,0 +1,21 @@
+=== changes applied 2026-09-08 12:31, reconstructed from system state ===
+--- 1. NetworkManager-wait-online ---
+disabled
+--- 2. GRUB, current vs the backup boot-splash.sh took ---
+--- /etc/default/grub.bak-20260908-123123	2026-09-02 21:35:36.633408932 -0400
++++ /etc/default/grub	2026-09-08 12:31:23.231379457 -0400
+@@ -4,9 +4,10 @@
+ #   info -f grub -n 'Simple configuration'
+ 
+ GRUB_DEFAULT=0
+-GRUB_TIMEOUT=5
++GRUB_TIMEOUT=0
++GRUB_TIMEOUT_STYLE=hidden
+ GRUB_DISTRIBUTOR=`( . /etc/os-release && echo ${NAME} )`
+-GRUB_CMDLINE_LINUX_DEFAULT="quiet"
++GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+ GRUB_CMDLINE_LINUX=""
+ 
+ # If your computer has multiple operating systems installed, then you
+--- backup file present ---
+-rw-r--r-- 1 root root 1534 Sep  2 21:35 /etc/default/grub.bak-20260908-123123

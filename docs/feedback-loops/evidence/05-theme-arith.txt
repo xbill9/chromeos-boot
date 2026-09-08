@@ -1,0 +1,18 @@
+=== @media count per file (dark variant, the active one) ===
+libadwaita.css: 159
+libadwaita-tweaks.css: 2
+
+=== journal error counts ===
+libadwaita.css errors:        2067
+libadwaita-tweaks.css errors: 26
+
+=== which processes emitted them ===
+  1288  cat
+   322  gnome-control-c
+   161  gnome-software
+   161  xdg-desktop-por
+   161  mutter-x11-fram
+
+=== does gtk.css include it ===
+@import url('libadwaita.css');
+@import url('libadwaita-tweaks.css');

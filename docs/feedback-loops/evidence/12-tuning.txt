@@ -1,0 +1,60 @@
+=== systemd-analyze ===
+Startup finished in 16.064s (firmware) + 8.014s (loader) + 4.617s (kernel) + 10.626s (userspace) = 39.324s 
+graphical.target reached after 10.626s in userspace.
+
+=== blame, top 15 ===
+7.774s NetworkManager-wait-online.service
+4.037s systemd-suspend.service
+3.177s nvidia-persistenced.service
+2.547s plymouth-quit-wait.service
+1.369s thermald.service
+1.037s docker.service
+ 912ms fwupd.service
+ 829ms nvidia-suspend.service
+ 549ms upower.service
+ 381ms dev-nvme0n1p2.device
+ 350ms apt-daily-upgrade.service
+ 228ms logrotate.service
+ 144ms systemd-udev-trigger.service
+ 137ms dpkg-db-backup.service
+ 125ms dev-disk-by\x2duuid-829702d1\x2d4f99\x2d4810\x2da8b0\x2d0351209edec3.swap
+
+=== critical-chain ===
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @10.626s
+└─power-profiles-daemon.service @10.547s +78ms
+  └─multi-user.target @10.545s
+    └─docker.service @9.507s +1.037s
+      └─network-online.target @9.505s
+        └─NetworkManager-wait-online.service @1.730s +7.774s
+          └─NetworkManager.service @1.623s +103ms
+            └─dbus.service @1.563s +57ms
+              └─basic.target @1.552s
+                └─sockets.target @1.552s
+                  └─docker.socket @1.533s +18ms
+                    └─sysinit.target @1.531s
+                      └─apparmor.service @1.427s +103ms
+                        └─local-fs.target @1.426s
+                          └─boot-efi.mount @1.381s +44ms
+                            └─systemd-fsck@dev-disk-by\x2duuid-3D00\x2d676B.service @817ms +61ms
+                              └─dev-disk-by\x2duuid-3D00\x2d676B.device @668ms
+
+=== user-session blame, top 10 ===
+1.197s org.gnome.Shell@wayland.service
+1.001s xdg-desktop-portal.service
+ 762ms xdg-desktop-portal-gnome.service
+ 558ms localsearch-3.service
+ 508ms org.gnome.SettingsDaemon.Power.service
+ 507ms org.gnome.SettingsDaemon.MediaKeys.service
+ 499ms org.gnome.SettingsDaemon.Color.service
+ 496ms org.gnome.SettingsDaemon.Keyboard.service
+ 495ms org.gnome.SettingsDaemon.Wacom.service
+ 319ms evolution-source-registry.service
+
+=== GRUB timeout (what boot-splash.sh targets) ===
+GRUB_TIMEOUT=5
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+
+=== what README/flex claims about boot ===

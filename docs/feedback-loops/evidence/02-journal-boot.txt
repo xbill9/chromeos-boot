@@ -1,0 +1,49 @@
+=== system journal errors this boot (priority err+) ===
+Sep 07 18:57:13 yoga9i kernel: i801_smbus 0000:00:1f.4: SMBus is busy, can't use it!
+Sep 07 18:57:13 yoga9i kernel: i801_smbus 0000:00:1f.4: SMBus is busy, can't use it!
+Sep 07 18:57:13 yoga9i kernel: i801_smbus 0000:00:1f.4: SMBus is busy, can't use it!
+Sep 07 18:57:13 yoga9i kernel: i2c_hid_acpi i2c-WAC2I2A:00: device returned incorrect report (0 vs 11 expected)
+Sep 07 18:57:13 yoga9i kernel: i2c_hid_acpi i2c-WAC2I2A:00: device returned incorrect report (0 vs 11 expected)
+Sep 07 18:57:13 yoga9i kernel: i2c_hid_acpi i2c-WAC2I2A:00: device returned incorrect report (0 vs 11 expected)
+Sep 07 18:57:13 yoga9i systemd-udevd[389]: /usr/lib/udev/rules.d/90-alsa-restore.rules:18 GOTO="alsa_restore_std" has no matching label, ignoring.
+Sep 07 18:57:13 yoga9i systemd-udevd[389]: /usr/lib/udev/rules.d/90-alsa-restore.rules:22 GOTO="alsa_restore_std" has no matching label, ignoring.
+Sep 07 18:57:15 yoga9i bluetoothd[788]: Failed to set mode: Failed (0x03)
+Sep 07 18:57:16 yoga9i kernel: 
+Sep 07 18:57:27 yoga9i gdm-password][1970]: gkr-pam: unable to locate daemon control file
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-gnome\x2dkeyring\x2dpkcs11-2161.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-gnome\x2dkeyring\x2dsecrets-2163.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-xdg\x2duser\x2ddirs-2180.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:28 yoga9i systemd[2003]: Failed to start app-gnome-user\x2ddirs\x2dupdate\x2dgtk-2337.scope - Application launched by gnome-session-binary.
+Sep 08 09:21:24 yoga9i systemd-udevd[389]: /usr/lib/udev/rules.d/90-alsa-restore.rules:18 GOTO="alsa_restore_std" has no matching label, ignoring.
+Sep 08 09:21:24 yoga9i systemd-udevd[389]: /usr/lib/udev/rules.d/90-alsa-restore.rules:22 GOTO="alsa_restore_std" has no matching label, ignoring.
+
+=== count err+ / warning+ ===
+err+:     17
+warning+: 1032
+
+=== top repeated warning+ messages ===
+    795 Theme parser error: libadwaita.css:N:N-N: Unknown @ rule
+     27 blacklist: Duplicate blacklisted hash bin:HEX
+     24 Can't update stage views actor unnamed [StBin] is on because it needs an allocation.
+     10 Theme parser error: libadwaita-tweaks.css:N:N-N: Unknown @ rule
+      7 Unable to get default source
+      7 Unable to get default sink
+      6 asked to register item /org/freedesktop/secrets/collection/login/N, but it's already registered
+      5 discover_other_daemon: N
+      4 /usr/lib/udev/rules.d/N-alsa-restore.rules:N The line has no effect any more, dropping.
+      4 /usr/lib/udev/rules.d/N-alsa-restore.rules:N GOTO="alsa_restore_std" has no matching label, ignoring.
+      4 Failed to handle service change: GDBus.Error:org.freedesktop.DBus.Error.Spawn.ChildExited: Process org.freedesktop.systemdN exited with status N
+      4 dbus-daemon[N]: [session uid=N pid=N pidfd=N] Activated service 'org.freedesktop.systemdN' failed: Process org.freedesktop.systemdN exited with status N
+      3 Monitor 'Built-in display' has no configuration which is-current!
+      3 iN_smbus N:N:Nf.N: SMBus is busy, can't use it!
+      3 iNc_hid_acpi iNc-WACNINA:N: device returned incorrect report (N vs N expected)
+      3 
+      2 s-monitors-utils: skipping device libcamera:\_SB_.PCIN.XHC_.RHUB.HSN-N:N.N-NfN:bNe
+      2 @resource:///org/gnome/shell/ui/init.js:N:N
+      2 Release of light sensors failed: GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Not Authorized: Sensor claim not allowed
+      2 Only N apps for recent list, hiding
+      2 Only N apps for curated list, hiding
+      2 #N   HEX i   resource:///org/gnome/shell/ui/keyboard.js:N (HEX @ N)
+      2 meta_window_set_stack_position_no_sync: assertion 'window->stack_position >= N' failed
+      2 g_variant_unref: assertion 'value != NULL' failed
+      2 g_variant_type_is_subtype_of: assertion 'g_variant_type_check (type)' failed

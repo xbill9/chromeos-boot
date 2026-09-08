@@ -1,0 +1,58 @@
+=== PATH and sbin ===
+/home/xbill/.local/bin:/home/xbill/bin:/home/xbill/.local/bin:/home/xbill/.pyenv/shims:/home/xbill/.pyenv/bin:/home/xbill/.cargo/bin:/home/xbill/.local/bin:/home/xbill/bin:/usr/local/cuda/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/home/xbill/.claude/plugins/cache/claude-plugins-official/skill-creator/85cce0381e78/bin:/home/xbill/publishing-kit/bin
+lrwxrwxrwx 1 root root     8 Sep  2 20:48 /sbin -> usr/sbin
+drwxr-xr-x 2 root root 16384 Sep  7 17:47 /usr/sbin
+
+=== PCI devices with NO kernel driver bound ===
+
+--- alt method: devices lacking driver ---
+no driver: 0000:00:08.0 00:08.0 System peripheral: Intel Corporation Xeon E3-1200 v5/v6 / E3-1500 v5 / 6th/7th/8th Gen Core Processor Gaussian Mixture Model
+no driver: 0000:00:14.2 00:14.2 RAM memory: Intel Corporation Comet Lake PCH Shared SRAM
+no driver: 0000:00:1f.0 00:1f.0 ISA bridge: Intel Corporation Comet Lake LPC Controller
+no driver: 0000:00:1f.5 00:1f.5 Serial bus controller: Intel Corporation Comet Lake PCH SPI Controller
+
+=== Wacom / touchscreen packages ===
+libinput-bin 1.28.1-1+deb13u1
+libinput10:amd64 1.28.1-1+deb13u1
+libwacom-common 2.14.0-1
+libwacom9:amd64 2.14.0-1
+xserver-xorg-input-libinput 1.5.0-1
+xserver-xorg-input-wacom 1.2.3-1
+
+=== input devices seen ===
+pci-0000:00:14.0-usb-0:7.2:1.0-event-mouse
+pci-0000:00:14.0-usb-0:7.2:1.0-mouse
+pci-0000:00:14.0-usb-0:7.3:1.0-event-kbd
+pci-0000:00:14.0-usb-0:7.3:1.1-event
+pci-0000:00:14.0-usb-0:7.3:1.1-event-mouse
+pci-0000:00:14.0-usb-0:7.3:1.1-mouse
+pci-0000:00:14.0-usbv2-0:7.2:1.0-event-mouse
+pci-0000:00:14.0-usbv2-0:7.2:1.0-mouse
+pci-0000:00:14.0-usbv2-0:7.3:1.0-event-kbd
+pci-0000:00:14.0-usbv2-0:7.3:1.1-event
+pci-0000:00:14.0-usbv2-0:7.3:1.1-event-mouse
+pci-0000:00:14.0-usbv2-0:7.3:1.1-mouse
+pci-0000:00:15.0-platform-i2c_designware.0-event-mouse
+pci-0000:00:15.0-platform-i2c_designware.0-mouse
+pci-0000:00:15.1-platform-i2c_designware.1-event
+pci-0000:00:15.1-platform-i2c_designware.1-event-mouse
+pci-0000:00:15.1-platform-i2c_designware.1-mouse
+pci-0000:00:1f.0-platform-VPC2004:00-event
+pci-0000:00:1f.3-platform-skl_hda_dsp_generic-event
+platform-i8042-serio-0-event-kbd
+platform-pcspkr-event-spkr
+platform-PNP0C0C:00-event
+platform-PNP0C0D:00-event
+platform-PNP0C14:04-event
+
+=== gnome-keyring pam context ===
+Initialise system trusted keyrings
+integrity: Platform Keyring initialized
+integrity: Machine keyring initialized
+time="2026-09-07T18:57:15.282979719-04:00" level=info msg="starting cri plugin" config="{\"containerd\":{\"defaultRuntimeName\":\"runc\",\"runtimes\":{\"runc\":{\"runtimeType\":\"io.containerd.runc.v2\",\"runtimePath\":\"\",\"PodAnnotations\":null,\"ContainerAnnotations\":null,\"options\":{\"BinaryName\":\"\",\"CriuImagePath\":\"\",\"CriuWorkPath\":\"\",\"IoGid\":0,\"IoUid\":0,\"NoNewKeyring\":false,\"Root\":\"\",\"ShimCgroup\":\"\",\"SystemdCgroup\":false},\"privileged_without_host_devices\":false,\"privileged_without_host_devices_all_devices_allowed\":false,\"cgroupWritable\":false,\"baseRuntimeSpec\":\"\",\"cniConfDir\":\"\",\"cniMaxConfNum\":0,\"snapshotter\":\"\",\"sandboxer\":\"podsandbox\",\"io_type\":\"\"}},\"ignoreBlockIONotEnabledErrors\":false,\"ignoreRdtNotEnabledErrors\":false},\"cni\":{\"binDir\":\"\",\"binDirs\":[\"/opt/cni/bin\"],\"confDir\":\"/etc/cni/net.d\",\"maxConfNum\":1,\"setupSerially\":false,\"confTemplate\":\"\",\"ipPref\":\"\",\"useInternalLoopback\":false},\"enableSelinux\":false,\"selinuxCategoryRange\":1024,\"maxContainerLogLineSize\":16384,\"disableApparmor\":false,\"restrictOOMScoreAdj\":false,\"disableProcMount\":false,\"unsetSeccompProfile\":\"\",\"tolerateMissingHugetlbController\":true,\"disableHugetlbController\":true,\"device_ownership_from_security_context\":false,\"ignoreImageDefinedVolumes\":false,\"netnsMountsUnderStateDir\":false,\"enableUnprivilegedPorts\":true,\"enableUnprivilegedICMP\":true,\"enableCDI\":true,\"cdiSpecDirs\":[\"/etc/cdi\",\"/var/run/cdi\"],\"drainExecSyncIOTimeout\":\"0s\",\"ignoreDeprecationWarnings\":null,\"statsCollectPeriod\":\"\",\"statsRetentionPeriod\":\"\",\"enableCRIU\":true,\"enableExperimentalRestoreViaCreate\":false,\"containerdRootDir\":\"/var/lib/containerd\",\"containerdEndpoint\":\"/run/containerd/containerd.sock\",\"rootDir\":\"/var/lib/containerd/io.containerd.grpc.v1.cri\",\"stateDir\":\"/run/containerd/io.containerd.grpc.v1.cri\"}"
+Listening on gnome-keyring-daemon.socket - GNOME Keyring daemon.
+Started gnome-keyring-daemon.service - GNOME Keyring daemon.
+GNOME_KEYRING_CONTROL=/run/user/110/keyring
+GNOME_KEYRING_CONTROL=/run/user/110/keyring
+gkr-pam: unable to locate daemon control file
+gkr-pam: stashed password to try later in open session

@@ -1,0 +1,23 @@
+=== os ===
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+Linux yoga9i 7.1.8+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 7.1.8-1~bpo13+1 (2026-08-16) x86_64 GNU/Linux
+
+=== groups (can we read the journal?) ===
+uid=1000(xbill) gid=1000(xbill) groups=1000(xbill),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),100(users),101(netdev),102(scanner),106(bluetooth),108(lpadmin),989(docker),992(render)
+
+=== boot time ===
+Startup finished in 16.064s (firmware) + 8.014s (loader) + 4.617s (kernel) + 10.626s (userspace) = 39.324s 
+graphical.target reached after 10.626s in userspace.
+
+=== failed units ===
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+
+=== failed user units ===
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.

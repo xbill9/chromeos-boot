@@ -1,0 +1,34 @@
+=== ADW_VERSION pinned in flex ===
+58:ADW_VERSION=${ADW_VERSION:-v6.5}
+262:# adw-gtk3 makes GTK3 apps match the libadwaita GTK4 ones, which is what stops
+266:  log "theme: adw-gtk3 $ADW_VERSION into $THEMES"
+267:  if [ -d "$THEMES/adw-gtk3-dark" ] && [ -d "$THEMES/adw-gtk3" ] ; then
+273:  url=https://github.com/lassekongo83/adw-gtk3/releases/download/$ADW_VERSION/adw-gtk3$ADW_VERSION.tar.xz
+275:    step "installed adw-gtk3 and adw-gtk3-dark"
+277:    warn "adw-gtk3 download failed ($url) -- GTK3 apps will not match"
+1084:    gsettings set org.gnome.desktop.interface gtk-theme   'adw-gtk3'
+1105:    gsettings set org.gnome.desktop.interface gtk-theme   'adw-gtk3-dark'
+1630:    ~/.local/share/themes/adw-gtk3*        the GTK theme
+
+=== installed theme dirs ===
+total 16
+drwxrwxr-x  4 xbill xbill 4096 Sep  2 22:32 .
+drwx------ 22 xbill xbill 4096 Sep  8 09:24 ..
+drwxr-xr-x  4 xbill xbill 4096 Apr 12 21:00 adw-gtk3
+drwxr-xr-x  4 xbill xbill 4096 Apr 12 21:00 adw-gtk3-dark
+
+=== which libadwaita.css do we have ===
+/home/xbill/.local/share/themes/adw-gtk3/gtk-4.0/libadwaita.css
+/home/xbill/.local/share/themes/adw-gtk3/gtk-4.0/libadwaita-tweaks.css
+/home/xbill/.local/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita.css
+/home/xbill/.local/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita-tweaks.css
+
+=== actual journal lines (first 5, unmangled) ===
+Theme parser error: libadwaita.css:94:1-7: Unknown @ rule
+Theme parser error: libadwaita.css:98:1-7: Unknown @ rule
+Theme parser error: libadwaita.css:112:1-7: Unknown @ rule
+Theme parser error: libadwaita.css:116:1-7: Unknown @ rule
+Theme parser error: libadwaita.css:190:1-7: Unknown @ rule
+
+=== distinct @ rules complained about ===
+795

@@ -1,0 +1,74 @@
+=== tree of both themes ===
+same file list
+
+=== which files differ between light and dark ===
+identical: ./gtk-3.0/assets/bullet@2-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/bullet-symbolic.svg
+identical: ./gtk-3.0/assets/bullet-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/check@2-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/check-symbolic.svg
+identical: ./gtk-3.0/assets/check-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/dash@2-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/dash-symbolic.svg
+identical: ./gtk-3.0/assets/dash-symbolic.symbolic.png
+identical: ./gtk-3.0/assets/devel-symbolic.svg
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-dark@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-dark.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-disabled@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-disabled-dark@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-disabled-dark.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above-disabled.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-above.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-dark@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-dark.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-disabled@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-disabled-dark@2.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-disabled-dark.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below-disabled.png
+identical: ./gtk-3.0/assets/slider-horz-scale-has-marks-below.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-dark@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-dark.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-disabled@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-disabled-dark@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-disabled-dark.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above-disabled.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-above.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-dark@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-dark.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-disabled@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-disabled-dark@2.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-disabled-dark.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below-disabled.png
+identical: ./gtk-3.0/assets/slider-vert-scale-has-marks-below.png
+identical: ./gtk-3.0/assets/text-select-end@2.png
+identical: ./gtk-3.0/assets/text-select-end-dark@2.png
+identical: ./gtk-3.0/assets/text-select-end-dark.png
+identical: ./gtk-3.0/assets/text-select-end.png
+identical: ./gtk-3.0/assets/text-select-start@2.png
+identical: ./gtk-3.0/assets/text-select-start-dark@2.png
+identical: ./gtk-3.0/assets/text-select-start-dark.png
+identical: ./gtk-3.0/assets/text-select-start.png
+DIFFERS: ./gtk-3.0/gtk.css
+identical: ./gtk-3.0/gtk-dark.css
+DIFFERS: ./gtk-3.0/thumbnail.png
+identical: ./gtk-4.0/assets/bullet-symbolic.svg
+identical: ./gtk-4.0/assets/check-symbolic.svg
+identical: ./gtk-4.0/assets/dash-symbolic.svg
+identical: ./gtk-4.0/assets/devel-symbolic.svg
+identical: ./gtk-4.0/gtk.css
+identical: ./gtk-4.0/gtk-dark.css
+identical: ./gtk-4.0/libadwaita.css
+identical: ./gtk-4.0/libadwaita-tweaks.css
+DIFFERS: ./index.theme
+
+=== gtk-4.0 gtk.css of each ===
+--- light ---
+@import url('libadwaita.css');
+@import url('libadwaita-tweaks.css');
+--- dark ---
+@import url('libadwaita.css');
+@import url('libadwaita-tweaks.css');

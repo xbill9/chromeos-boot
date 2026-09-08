@@ -1,0 +1,35 @@
+=== boot ===
+Startup finished in 14.448s (firmware) + 2.776s (loader) + 4.978s (kernel) + 4.941s (userspace) = 27.144s 
+graphical.target reached after 4.940s in userspace.
+
+=== critical chain ===
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @4.940s
+└─power-profiles-daemon.service @4.878s +61ms
+  └─multi-user.target @4.876s
+    └─nvidia-persistenced.service @1.572s +3.303s
+      └─basic.target @1.551s
+        └─sockets.target @1.551s
+          └─docker.socket @1.527s +24ms
+            └─sysinit.target @1.524s
+              └─apparmor.service @1.423s +100ms
+                └─local-fs.target @1.422s
+                  └─boot-efi.mount @1.365s +56ms
+                    └─systemd-fsck@dev-disk-by\x2duuid-3D00\x2d676B.service @813ms +54ms
+                      └─dev-disk-by\x2duuid-3D00\x2d676B.device @722ms
+
+=== theme parser errors this boot ===
+libadwaita parse errors: 0
+0
+any Theme parser error:  0
+0
+
+=== journal totals ===
+err+:     17
+warning+: 151
+
+=== uptime / boot id ===
+up 0 minutes
+         system boot  2026-09-08 12:35

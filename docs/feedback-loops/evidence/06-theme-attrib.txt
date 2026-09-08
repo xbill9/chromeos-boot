@@ -1,0 +1,29 @@
+=== theme parser errors, attributed by message prefix (this boot) ===
+    966 [no-prefix]
+    644 process
+    483 chrome
+
+=== per-emitter, per-file ===
+    636 process libadwaita.css
+    477 chrome libadwaita.css
+      8 process libadwaita-tweaks.css
+      6 chrome libadwaita-tweaks.css
+      5 Theme parser error: libadwaita-tweaks.css:54:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita-tweaks.css:46:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:996:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:990:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:986:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:98:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:970:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:966:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:960:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:944:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:94:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:901:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:883:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:879:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:824:1-7: Unknown @ rule
+      5 Theme parser error: libadwaita.css:796:1-7: Unknown @ rule
+
+=== grand total ===
+2093

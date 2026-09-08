@@ -1,0 +1,40 @@
+=== phase-by-phase, before -> after ===
+phase         before     after     delta   note
+firmware     16.064s   14.448s   -1.616s   NOT TOUCHED -- variance
+loader        8.014s    2.776s   -5.238s   GRUB_TIMEOUT 5->0
+kernel        4.617s    4.978s   +0.361s   NOT TOUCHED -- variance
+userspace    10.626s    4.941s   -5.685s   wait-online disabled
+TOTAL        39.324s   27.144s  -12.180s
+
+attributable (loader+userspace): -10.923s
+untouched phases drifted:         -1.255s  <- bounds the run-to-run noise
+
+=== the new bottleneck ===
+3.303s nvidia-persistenced.service
+2.689s plymouth-quit-wait.service
+2.208s thermald.service
+2.019s docker.service
+ 901ms fwupd.service
+ 313ms dev-nvme0n1p2.device
+ 192ms upower.service
+ 130ms systemd-udev-trigger.service
+
+=== is network-online still reached, and when? ===
+disabled
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+network-online.target @1.720s
+└─network.target @1.719s
+  └─NetworkManager.service @1.626s +93ms
+    └─dbus.service @1.562s +58ms
+      └─basic.target @1.551s
+
+=== did docker survive it ===
+active
+(no docker warnings above = clean start)
+
+=== theme actually in effect ===
+'adw-gtk3-dark'
+'prefer-dark'
+v5.7

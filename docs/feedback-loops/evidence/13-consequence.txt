@@ -1,0 +1,14 @@
+=== is the DARK variant's dark palette only inside @media? ===
+window_bg_color defined outside @media: 1
+62:@define-color window_bg_color #fafafb;
+
+--- and inside @media blocks: ---
+@media (prefers-color-scheme: dark) { @define-color destructive_bg_color @red_4; @define-color success_bg_color @green_5; @define-color warning_bg_color #cd9309; @define-color error_bg_color @red_4; @define-color accent_color oklab(from @accent_bg_color min(l, 0.5) a b); @define-color destructive_color oklab(from @destructive_bg_color min(l, 0.5) a b); @define-color success_color oklab(from @success_bg_color min(l, 0.5) a b); @define-color warning_color oklab(from @warning_bg_color min(l, 0.5) a b); @define-color error_color oklab(from @error_bg_color min(l, 0.5) a b); @define-color accent_color oklab(from @accent_bg_color max(l, 0.85) a b); @define-color destructive_color oklab(from @destructive_bg_color max(l, 0.85) a b); @define-color success_color oklab(from @success_bg_color max(l, 0.85) a b); @define-color warning_color oklab(from @warning_bg_color max(l, 0.85) a b); @define-color error_color oklab(from @error_bg_color max(l, 0.85) a b); @define-color window_bg_color #222226;
+
+=== how many @define-color rules live inside @media (i.e. dropped on GTK 4.18) ===
+@define-color occurrences inside @media lines: 46
+@define-color total: 154
+
+=== light variant differs? ===
+f4df4f9721fb69c22e42dca3737108ae  /home/xbill/.local/share/themes/adw-gtk3/gtk-4.0/libadwaita.css
+f4df4f9721fb69c22e42dca3737108ae  /home/xbill/.local/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita.css

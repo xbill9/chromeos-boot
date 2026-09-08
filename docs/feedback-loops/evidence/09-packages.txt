@@ -1,0 +1,75 @@
+=== broken / half-configured packages ===
+rc  linux-image-6.12.94+deb13-amd64         6.12.94-1                            amd64        Linux 6.12 for 64-bit PCs (signed)
+(none above = clean)
+
+=== rc (removed, config left) count ===
+1
+
+=== apt-mark showmanual count / autoremovable ===
+375
+-- autoremovable --
+0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded.
+
+=== apt sources ===
+deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main
+deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/ /
+deb http://deb.debian.org/debian/ trixie main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian/ trixie main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian/ trixie-updates main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian/ trixie-updates main contrib non-free non-free-firmware
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: trixie-backports
+Components: main contrib non-free non-free-firmware
+deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian   trixie stable
+Types: deb
+URIs: https://dl.google.com/linux/chrome-stable/deb/
+Suites: stable
+Components: main
+deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+Types: deb deb-src
+URIs: http://deb.debian.org/debian/
+Suites: trixie
+Components: contrib non-free
+Types: deb deb-src
+URIs: http://deb.debian.org/debian/
+Suites: trixie-updates
+Components: contrib non-free
+Types: deb deb-src
+URIs: http://security.debian.org/debian-security/
+Suites: trixie-security
+Components: contrib non-free
+
+=== policy: where do packages come from ===
+Package files:
+ 100 /var/lib/dpkg/status
+     release a=now
+ 500 https://packages.cloud.google.com/apt cloud-sdk/main all Packages
+     release o=cloud-sdk,a=cloud-sdk,n=cloud-sdk,l=cloud-sdk,c=main,b=all
+     origin packages.cloud.google.com
+ 500 https://packages.cloud.google.com/apt cloud-sdk/main amd64 Packages
+     release o=cloud-sdk,a=cloud-sdk,n=cloud-sdk,l=cloud-sdk,c=main,b=amd64
+     origin packages.cloud.google.com
+ 500 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages
+     release v=1.0,o=Google LLC,a=stable,n=stable,l=Google,c=main,b=amd64
+     origin dl.google.com
+ 500 https://download.docker.com/linux/debian trixie/stable amd64 Packages
+     release o=Docker,a=trixie,l=Docker CE,c=stable,b=amd64
+     origin download.docker.com
+ 100 https://deb.debian.org/debian trixie-backports/non-free-firmware amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports,l=Debian Backports,c=non-free-firmware,b=amd64
+     origin deb.debian.org
+ 100 https://deb.debian.org/debian trixie-backports/non-free amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports,l=Debian Backports,c=non-free,b=amd64
+     origin deb.debian.org
+ 100 https://deb.debian.org/debian trixie-backports/contrib amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports,l=Debian Backports,c=contrib,b=amd64
+     origin deb.debian.org
+ 100 https://deb.debian.org/debian trixie-backports/main amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports,l=Debian Backports,c=main,b=amd64
+     origin deb.debian.org
+ 500 https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64  Packages
+     release o=NVIDIA,l=NVIDIA CUDA,c=
+     origin developer.download.nvidia.com

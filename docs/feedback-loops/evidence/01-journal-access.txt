@@ -1,0 +1,15 @@
+=== journalctl without sudo? ===
+      Pass -q to turn off this notice.
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-gnome\x2dkeyring\x2dpkcs11-2161.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-gnome\x2dkeyring\x2dsecrets-2163.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:27 yoga9i systemd[2003]: Failed to start app-gnome-xdg\x2duser\x2ddirs-2180.scope - Application launched by gnome-session-binary.
+Sep 07 18:57:28 yoga9i systemd[2003]: Failed to start app-gnome-user\x2ddirs\x2dupdate\x2dgtk-2337.scope - Application launched by gnome-session-binary.
+
+=== count of err+ this boot ===
+7
+
+=== dmesg readable? ===
+dmesg: read kernel buffer failed: Operation not permitted
+
+=== kernel.dmesg_restrict ===
+/bin/bash: line 15: sysctl: command not found

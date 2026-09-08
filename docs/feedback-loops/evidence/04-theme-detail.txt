@@ -1,0 +1,43 @@
+=== lines 92-99 and 110-118 of /home/xbill/.local/share/themes/adw-gtk3/gtk-4.0/libadwaita.css ===
+@define-color shade_color RGB(0 0 6 / 7%);
+@define-color scrollbar_outline_color white;
+@media (prefers-color-scheme: dark) { @define-color destructive_bg_color @red_4; @define-color success_bg_color @green_5; @define-color warning_bg_color #cd9309; @define-color error_bg_color @red_4; @define-color accent_color oklab(from @accent_bg_color min(l, 0.5) a b); @define-color destructive_color oklab(from @destructive_bg_color min(l, 0.5) a b); @define-color success_color oklab(from @success_bg_color min(l, 0.5) a b); @define-color warning_color oklab(from @warning_bg_color min(l, 0.5) a b); @define-color error_color oklab(from @error_bg_color min(l, 0.5) a b); @define-color accent_color oklab(from @accent_bg_color max(l, 0.85) a b); @define-color destructive_color oklab(from @destructive_bg_color max(l, 0.85) a b); @define-color success_color oklab(from @success_bg_color max(l, 0.85) a b); @define-color warning_color oklab(from @warning_bg_color max(l, 0.85) a b); @define-color error_color oklab(from @error_bg_color max(l, 0.85) a b); @define-color window_bg_color #222226; @define-color window_fg_color white; @define-color view_bg_color #1d1d20; @define-color view_fg_color white; @define-color headerbar_bg_color #2e2e32; @define-color headerbar_fg_color white; @define-color headerbar_border_color white; @define-color headerbar_shade_color RGB(0 0 6 / 36%); @define-color headerbar_darker_shade_color RGB(0 0 12 / 90%); @define-color sidebar_bg_color #2e2e32; @define-color sidebar_fg_color white; @define-color sidebar_backdrop_color #28282c; @define-color sidebar_shade_color RGB(0 0 6 / 25%); @define-color sidebar_border_color RGB(0 0 6 / 36%); @define-color secondary_sidebar_bg_color #28282c; @define-color secondary_sidebar_fg_color white; @define-color secondary_sidebar_backdrop_color #252529; @define-color secondary_sidebar_shade_color RGB(0 0 6 / 25%); @define-color secondary_sidebar_border_color RGB(0 0 6 / 36%); @define-color card_bg_color RGB(255 255 255 / 8%); @define-color card_fg_color white; @define-color card_shade_color RGB(0 0 6 / 36%); @define-color dialog_bg_color #36363a; @define-color dialog_fg_color white; @define-color popover_bg_color #36363a; @define-color popover_fg_color white; @define-color popover_shade_color RGB(0 0 6 / 25%); @define-color thumbnail_bg_color #39393d; @define-color thumbnail_fg_color white; @define-color shade_color RGB(0 0 6 / 25%); @define-color scrollbar_outline_color RGB(0 0 12 / 95%); }
+
+:root { --standalone-color-oklab: min(l, 0.5) a b; }
+
+@media (prefers-color-scheme: dark) { :root { --standalone-color-oklab: max(l, 0.85) a b; } }
+
+  ); --window-bg-color: @window_bg_color; --window-fg-color: @window_fg_color; --view-bg-color: @view_bg_color; --view-fg-color: @view_fg_color; --headerbar-bg-color: @headerbar_bg_color; --headerbar-fg-color: @headerbar_fg_color; --headerbar-border-color: @headerbar_border_color; --headerbar-backdrop-color: @headerbar_backdrop_color; --headerbar-shade-color: @headerbar_shade_color; --headerbar-darker-shade-color: @headerbar_darker_shade_color; --sidebar-bg-color: @sidebar_bg_color; --sidebar-fg-color: @sidebar_fg_color; --sidebar-backdrop-color: @sidebar_backdrop_color; --sidebar-border-color: @sidebar_border_color; --sidebar-shade-color: @sidebar_shade_color; --secondary-sidebar-bg-color: @secondary_sidebar_bg_color; --secondary-sidebar-fg-color: @secondary_sidebar_fg_color; --secondary-sidebar-backdrop-color: @secondary_sidebar_backdrop_color; --secondary-sidebar-border-color: @secondary_sidebar_border_color; --secondary-sidebar-shade-color: @secondary_sidebar_shade_color; --card-bg-color: @card_bg_color; --card-fg-color: @card_fg_color; --card-shade-color: @card_shade_color; --dialog-bg-color: @dialog_bg_color; --dialog-fg-color: @dialog_fg_color; --popover-bg-color: @popover_bg_color; --popover-fg-color: @popover_fg_color; --popover-shade-color: @popover_shade_color; --thumbnail-bg-color: @thumbnail_bg_color; --thumbnail-fg-color: @thumbnail_fg_color; --shade-color: @shade_color; --scrollbar-outline-color: @scrollbar_outline_color; --active-toggle-bg-color: #ffffff; --active-toggle-fg-color: rgb(0 0 6 / 80%); --overview-bg-color: #f3f3f5; --overview-fg-color: rgb(0 0 6 / 80%); }
+
+@media (prefers-color-scheme: dark) { :root { --active-toggle-bg-color: rgb(255 255 255 / 20%); --active-toggle-fg-color: #ffffff; --overview-bg-color: #28282c; --overview-fg-color: #ffffff; } }
+
+:root { --border-color: color-mix(in srgb, currentColor var(--border-opacity), transparent); --border-opacity: 15%; --dim-opacity: 55%; --disabled-opacity: 50%; }
+
+@media (prefers-contrast: more) { :root { --border-opacity: 50%; --dim-opacity: 90%; --disabled-opacity: 40%; } }
+
+:root { --window-radius: 15px; -gtk-icon-palette: success var(--success-color), warning var(--warning-color), error var(--error-color), accent var(--accent-color); }
+bottom-sheet > sheet { box-shadow: 0 0 14px 2px RGB(0 0 6/3%), 0 0 5px 2px RGB(0 0 6/10%), 0 0 0 1px RGB(0 0 0/5%); transition: border-radius 100ms ease-out, box-shadow 250ms ease; }
+
+@media (prefers-contrast: more) { bottom-sheet > sheet { box-shadow: 0 0 14px 2px RGB(0 0 6/3%), 0 0 5px 2px RGB(0 0 6/10%), 0 0 0 1px RGB(0 0 0/80%); } }
+
+bottom-sheet > sheet > stack > widget > drag-handle { background-color: color-mix(in srgb, currentColor 25%, transparent); min-width: 54px; min-height: 6px; margin: 15px; border-radius: 99px; }
+
+=== histogram of leading @ rules in that file ===
+    159 @media
+    108 @define-color
+      2 @keyframes
+
+=== file size / line count ===
+3055 /home/xbill/.local/share/themes/adw-gtk3/gtk-4.0/libadwaita.css
+
+=== GTK / libadwaita versions ===
+gir1.2-adw-1:amd64 1.7.6-1~deb13u1
+libadwaita-1-0:amd64 1.7.6-1~deb13u1
+libgtk-4-1:amd64 4.18.6+ds-2
+libgtk-4-bin 4.18.6+ds-2
+libgtk-4-common 4.18.6+ds-2
+libgtk-4-media-gstreamer 4.18.6+ds-2
+
+=== gsettings gtk-theme now ===
+'adw-gtk3-dark'
+'prefer-dark'

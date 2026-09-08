@@ -1,1 +1,2 @@
+devto-gde = https://dev.to/gde/the-desktop-looked-right-2093-parse-errors-a-boot-and-109-seconds-that-werent-doing-anything-4bb
 repo = https://github.com/xbill9/chromeos-boot

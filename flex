@@ -55,7 +55,21 @@ FONTCONF_FILE=$FONTCONF/50-chromeos-flex.conf
 
 # Pinned to what was actually installed and tested on the first machine.
 # Override in the environment to move either one.
-ADW_VERSION=${ADW_VERSION:-v6.5}
+#
+# adw-gtk3 must match the GTK the desktop actually ships, not the newest
+# release.  From v6.4 the GTK4 half of the theme selects dark with a CSS
+# `@media (prefers-color-scheme: dark)` query and needs GTK 4.20; trixie ships
+# GTK 4.18, which does not know `@media` and drops every block guarded by one.
+# That fails silently and expensively: `flex theme` reports success, the
+# desktop looks roughly right because libadwaita apps do their own dark, and
+# the journal collects ~161 "Theme parser error ... Unknown @ rule" lines per
+# GTK4 process per launch.  Worse, from v6.4 the two gtk-4.0 trees are byte
+# identical, so with the query discarded `adw-gtk3-dark` serves the *light*
+# palette and set-mode.sh cannot switch GTK4 apps at all.
+# v5.7 is upstream's own "for GNOME 48 and libadwaita 1.7" release, which is
+# exactly this platform, and it ships two genuinely different gtk-4.0 trees.
+# Newer is the wrong instinct here -- move this only with the GTK version.
+ADW_VERSION=${ADW_VERSION:-v5.7}
 PAPIRUS_URL=${PAPIRUS_URL:-https://github.com/PapirusDevelopmentTeam/papirus-icon-theme/archive/refs/heads/master.tar.gz}
 
 # How much to enlarge text desktop-wide.  1.0 is the GNOME default and is what
@@ -227,10 +241,21 @@ stage_pkgs() {
   # noto-core is the coverage half: 42MB, and without it every `Noto Sans` in a
   # font stack -- which is most of Google's own properties -- misses and falls
   # through to DejaVu.
+  #
+  # pandoc and python3-pil are the publishing kit's two dependencies: pandoc
+  # renders article markdown to HTML, Pillow draws covers and rasterises the
+  # tables Medium's importer strips.  They are here rather than left to `pip`
+  # because the kit runs under whatever python3 is on PATH, and a --user wheel
+  # installed against some other interpreter is invisible to /usr/bin/python3.
+  # fonts-liberation is listed explicitly even though Chrome depends on it and
+  # would drag it in anyway: the cover generator hardcodes
+  # /usr/share/fonts/truetype/liberation/*.ttf, and a hard dependency of this
+  # script should not rest on a browser install that the BROWSER check can skip.
   sudo apt-get install -y -qq \
       fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip gh \
       fonts-croscore fonts-crosextra-carlito fonts-crosextra-caladea \
       fonts-noto-core \
+      pandoc python3-pil fonts-liberation \
       apt-transport-https ca-certificates gnupg \
     || warn "some packages failed -- check the output above"
   if [ "$FONTS_CJK" = 1 ] ; then
@@ -264,15 +289,32 @@ stage_pkgs() {
 # package for it, so it comes from the upstream release tarball.
 stage_theme() {
   log "theme: adw-gtk3 $ADW_VERSION into $THEMES"
-  if [ -d "$THEMES/adw-gtk3-dark" ] && [ -d "$THEMES/adw-gtk3" ] ; then
-    step "already installed -- skipping"
+  # The guard records which version is on disk, not just that something is.
+  # Presence alone was the first version of this test and it made correcting
+  # the pin a no-op: the directories existed, the stage skipped, and the wrong
+  # theme stayed put through every re-run.  Idempotence has to mean "on the
+  # pinned version", or a bad pin is unrepairable by the tool that set it.
+  if [ -d "$THEMES/adw-gtk3-dark" ] && [ -d "$THEMES/adw-gtk3" ] \
+     && [ "`cat "$THEMES/.adw-gtk3-version" 2>/dev/null`" = "$ADW_VERSION" ] ; then
+    step "already installed at $ADW_VERSION -- skipping"
     return
   fi
   mkdir -p "$THEMES" || { warn "cannot create $THEMES"; return; }
   tmp=`mktemp -d` || { warn "cannot create temp dir"; return; }
   url=https://github.com/lassekongo83/adw-gtk3/releases/download/$ADW_VERSION/adw-gtk3$ADW_VERSION.tar.xz
-  if curl -fsSL "$url" -o "$tmp/adw.tar.xz" && tar -xf "$tmp/adw.tar.xz" -C "$THEMES" ; then
-    step "installed adw-gtk3 and adw-gtk3-dark"
+  if curl -fsSL "$url" -o "$tmp/adw.tar.xz" ; then
+    # Remove before extracting rather than unpacking over the top.  The tree
+    # changed shape between releases -- v6.3 and later add libadwaita.css and
+    # libadwaita-tweaks.css to gtk-4.0 -- so extracting v5.7 onto a v6.5 tree
+    # leaves those two files behind, still @import'ed by nothing but still
+    # found by anything that globs the directory.
+    rm -rf "$THEMES/adw-gtk3" "$THEMES/adw-gtk3-dark"
+    if tar -xf "$tmp/adw.tar.xz" -C "$THEMES" ; then
+      printf '%s\n' "$ADW_VERSION" > "$THEMES/.adw-gtk3-version"
+      step "installed adw-gtk3 and adw-gtk3-dark at $ADW_VERSION"
+    else
+      warn "adw-gtk3 extract failed -- GTK3 apps will not match"
+    fi
   else
     warn "adw-gtk3 download failed ($url) -- GTK3 apps will not match"
   fi

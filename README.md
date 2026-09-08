@@ -83,6 +83,7 @@ Two things then need the steps above to have finished:
    then deletes `~/google-cloud-sdk`.
 5. Installs the phone tools — `adb`, `fastboot` and the libimobiledevice
    utilities — and puts you in the `plugdev` group.
+6. Installs the doc tools — `pandoc`, `python3-pil` and `fonts-liberation`.
 
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
@@ -133,6 +134,27 @@ ChromeOS Settings, under the Linux development environment, **Manage USB
 devices** — and it has to be re-shared after every unplug. Once it is
 shared, `adb devices` should list an Android handset and `ideviceinfo` should
 answer for an iPhone; `lsusb` is the thing to check when neither does.
+
+### Doc tools
+
+Step 6 installs `pandoc`, `python3-pil` and `fonts-liberation`, which are what
+the publishing kit shells out to: pandoc renders article markdown to HTML,
+Pillow draws the cover image and rasterises every table, and the cover
+generator hardcodes paths into the Liberation faces.
+
+Debian's `pandoc` rather than the upstream release or the `pypandoc-binary`
+wheel. The wheel works, but it installs a second pandoc under `~/.local` that
+drifts from apt on its own schedule, and two pandocs on one machine is how you
+get output that changes without an edit.
+
+`python3-pil` rather than `pip install Pillow` for a related reason: the kit is
+run with whatever `python3` is on `PATH`, which in a fresh container is
+`/usr/bin/python3`. A `--user` wheel installed against a pyenv interpreter is
+invisible to it, and the failure is an import error at the point of use rather
+than at install time.
+
+Like steps 4 and 5, this is non-fatal — no sudo or no network warns and moves
+on, and re-running `stage` installs them later.
 
 ### Bucket
 
@@ -202,10 +224,20 @@ wallpaper and the keybindings are live immediately.
   left alone. `non-free-firmware` is not touched; the installer has enabled it
   since Debian 12. This is the one stage `bash flex revert` needs `sudo` for.
 - **`pkgs`** — Roboto, the croscore and Noto font sets, gnome-tweaks, unzip,
-  `gh`, and Chrome if no Chromium-family browser is already installed. Noto CJK
-  is 91MB and left out; `FONTS_CJK=1` adds it.
+  `gh`, `pandoc`, `python3-pil` and `fonts-liberation`, and Chrome if no
+  Chromium-family browser is already installed. Noto CJK is 91MB and left out;
+  `FONTS_CJK=1` adds it. The pandoc and Pillow pair are the publishing kit's
+  dependencies, listed here for the same reason `stage` lists them: the kit
+  runs under the system `python3`, where a `--user` wheel is not visible.
 - **`theme`** — adw-gtk3, light and dark, from the upstream release tarball
   (trixie has no package for it), so GTK3 apps match the libadwaita GTK4 ones.
+  Pinned to `v5.7`, upstream's GNOME 48 / libadwaita 1.7 release — which is
+  what trixie ships. Do not raise the pin to keep up: from `v6.4` the GTK4
+  half needs GTK 4.20 for a CSS `@media` query, trixie has GTK 4.18, and the
+  mismatch is silent — the stage still reports success while every `@media`
+  block is discarded at parse time. The stage records the installed version
+  in `~/.local/share/themes/.adw-gtk3-version` and re-extracts when the pin
+  moves, so correcting a bad pin is a re-run rather than a manual `rm -rf`.
 - **`icons`** — Papirus and Papirus-Dark, user-level.
 - **`shelf`** — installs dash-to-panel in place of the packaged dash-to-dock:
   only dash-to-panel merges the taskbar and system tray into one bar, which is

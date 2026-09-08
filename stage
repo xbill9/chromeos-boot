@@ -201,6 +201,47 @@ else
   warn "phone tools: install failed -- retry with \`bash stage\`"
 fi
 
+# --- doc tools ------------------------------------------------------------
+# pandoc and Pillow are what the publishing kit shells out to: pandoc renders
+# the article markdown to HTML, Pillow draws the cover and rasterises every
+# table that Medium's importer would otherwise strip.  md2docx.py in ~/bin
+# wants pandoc too, so this is not article-only tooling.
+#
+# Debian's pandoc rather than the upstream release or the pypandoc-binary
+# wheel.  The wheel was tried and does work, but it puts a second pandoc under
+# ~/.local that drifts from apt on its own schedule -- two pandocs on one box
+# is how you get output that changes without an edit.
+#
+# python3-pil, not `pip install Pillow`: the kit runs under whatever python3
+# is on PATH, which in a fresh container is /usr/bin/python3, and a --user
+# wheel installed against a pyenv interpreter is invisible to it.
+#
+# fonts-liberation is not optional decoration.  The cover generator hardcodes
+# /usr/share/fonts/truetype/liberation/*.ttf, so without the package it dies
+# on a missing file rather than falling back to a default face.
+#
+# Non-fatal, like the two apt blocks above: a container with no sudo or no
+# network is staged all the same, and re-running stage installs these later.
+apt_doc_tools() {
+  # Repeated for the same reason apt_phone_tools repeats it -- any earlier
+  # block can be skipped, so the lists may never have been fetched this run.
+  sudo apt-get update -qq || return 1
+  sudo apt-get install -y -qq pandoc python3-pil fonts-liberation || return 1
+}
+
+log "doc tools: pandoc and Pillow for the publishing kit"
+if ! command -v sudo >/dev/null 2>&1 ; then
+  warn "doc tools: no sudo on this container -- skipping, re-run \`bash stage\` later"
+elif apt_doc_tools ; then
+  # dpkg rather than `pandoc --version`, for the same reason as the phone
+  # tools lines: option spellings move between releases, and dpkg cannot end
+  # up printing a usage message into the log.
+  log "doc tools: pandoc `dpkg-query -W -f='${Version}' pandoc 2>/dev/null`"
+  log "doc tools: Pillow `dpkg-query -W -f='${Version}' python3-pil 2>/dev/null`"
+else
+  warn "doc tools: install failed -- retry with \`bash stage\`"
+fi
+
 cat <<'DONE'
 
   Staged.  Two commands left:

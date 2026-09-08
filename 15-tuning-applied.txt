@@ -1,0 +1,53 @@
+=== BEFORE (this boot, for the record) ===
+Startup finished in 16.064s (firmware) + 8.014s (loader) + 4.617s (kernel) + 10.626s (userspace) = 39.324s 
+graphical.target reached after 10.626s in userspace.
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+graphical.target @10.626s
+└─power-profiles-daemon.service @10.547s +78ms
+  └─multi-user.target @10.545s
+    └─docker.service @9.507s +1.037s
+      └─network-online.target @9.505s
+        └─NetworkManager-wait-online.service @1.730s +7.774s
+          └─NetworkManager.service @1.623s +103ms
+            └─dbus.service @1.563s +57ms
+              └─basic.target @1.552s
+
+=== 1. disable NetworkManager-wait-online ===
+Removed '/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service'.
+disabled
+
+=== 2. boot-splash.sh ===
+backed up -> /etc/default/grub.bak-20260908-123123
+--- changes ---
+--- /etc/default/grub.bak-20260908-123123	2026-09-02 21:35:36.633408932 -0400
++++ /etc/default/grub	2026-09-08 12:31:23.231379457 -0400
+@@ -4,9 +4,10 @@
+ #   info -f grub -n 'Simple configuration'
+ 
+ GRUB_DEFAULT=0
+-GRUB_TIMEOUT=5
++GRUB_TIMEOUT=0
++GRUB_TIMEOUT_STYLE=hidden
+ GRUB_DISTRIBUTOR=`( . /etc/os-release && echo ${NAME} )`
+-GRUB_CMDLINE_LINUX_DEFAULT="quiet"
++GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+ GRUB_CMDLINE_LINUX=""
+ 
+ # If your computer has multiple operating systems installed, then you
+--- regenerating grub.cfg ---
+Generating grub configuration file ...
+Found background image: /usr/share/images/desktop-base/desktop-grub.png
+Found linux image: /boot/vmlinuz-7.1.8+deb13-amd64
+Found initrd image: /boot/initrd.img-7.1.8+deb13-amd64
+Found linux image: /boot/vmlinuz-6.12.107+deb13-amd64
+Found initrd image: /boot/initrd.img-6.12.107+deb13-amd64
+Warning: os-prober will not be executed to detect other bootable partitions.
+Systems on them will not be added to the GRUB boot configuration.
+Check GRUB_DISABLE_OS_PROBER documentation entry.
+Adding boot menu entry for UEFI Firmware Settings ...
+done
+
+Done. Reboot to see it.
+Menu is still reachable: hold SHIFT (or tap ESC) during boot.

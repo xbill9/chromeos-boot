@@ -484,5 +484,3 @@ Scope: one laptop, one operating system, measured 2026-09-08 on Debian 13 with G
 The strategy of reading the system's own evidence at volume, attributing it by payload rather than metadata, changing one thing, and re-running the query that found it was validated with an incremental step by step approach.
 
 *Disclosure: I ran this with Claude Code as the diagnostic agent — it swept the journal, built the histograms, traced the pin to the upstream release notes, wrote the fix and re-measured after the reboot, while I steered and made the calls about what to touch. The commands, the counts and both defects are real and archived in the repository.*
-
-Any opinions in this article are those of the individual author and may not reflect the opinions of AWS.

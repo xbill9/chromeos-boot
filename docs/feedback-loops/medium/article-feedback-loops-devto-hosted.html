@@ -311,10 +311,10 @@ all of them GNOME session scopes failing to start, and that looked like
 the whole picture. It was not the whole picture. It was the picture
 available to an unprivileged user:</p>
 <div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span></span></code></pre></div>
-<pre class="plaintext"><code>uid=1000(xbill) gid=1000(xbill) groups=1000(xbill),24(cdrom),25(floppy),
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span></span>
+uid=1000(xbill) gid=1000(xbill) groups=1000(xbill),24(cdrom),25(floppy),
 27(sudo),29(audio),30(dip),44(video),46(plugdev),100(users),101(netdev),
-102(scanner),106(bluetooth),108(lpadmin),989(docker),992(render)</code></pre>
+102(scanner),106(bluetooth),108(lpadmin),989(docker),992(render)</code></pre></div>
 <p><strong>No <code>adm</code>, no
 <code>systemd-journal</code>.</strong> Without either,
 <code>journalctl</code> silently narrows to your own user journal rather
@@ -322,8 +322,8 @@ than refusing — you get output, it is correctly formatted, and it is a
 small fraction of what happened. The kernel buffer is closed off
 separately:</p>
 <div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmesg</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-3</span></span></code></pre></div>
-<pre class="plaintext"><code>dmesg: read kernel buffer failed: Operation not permitted</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmesg</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-3</span></span>
+dmesg: read kernel buffer failed: Operation not permitted</code></pre></div>
 <p>The difference between the two views on this machine:</p>
 <p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-2.png"
 alt="table" /></p>
@@ -340,21 +340,21 @@ it was almost entirely a red herring. The volume was one priority
 down:</p>
 <div class="sourceCode" id="cb5"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> err     <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div>
-<pre class="plaintext"><code>17
-1032</code></pre>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+17
+1032</code></pre></div>
 <p>A thousand warnings is too many to read, so collapse them into shapes
 first. Normalising the numbers and hex out of each message turns a
 thousand lines into a histogram of distinct problems:</p>
 <div class="sourceCode" id="cb7"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="dt">\</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;s/[0-9a-f]\{8,\}/HEX/g; s/[0-9]\+/N/g&#39;</span> <span class="dt">\</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-5</span></span></code></pre></div>
-<pre class="plaintext"><code>    795 Theme parser error: libadwaita.css:N:N-N: Unknown @ rule
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-5</span></span>
+    795 Theme parser error: libadwaita.css:N:N-N: Unknown @ rule
      27 blacklist: Duplicate blacklisted hash bin:HEX
      24 Can&#39;t update stage views actor unnamed [StBin] is on because it needs an allocation.
      10 Theme parser error: libadwaita-tweaks.css:N:N-N: Unknown @ rule
-      7 Unable to get default source</code></pre>
+      7 Unable to get default source</code></pre></div>
 <p><strong>805 of the 1,032 warnings on this system were one
 defect.</strong> It had never appeared on screen, in any settings panel,
 or in the output of the script that caused it — which had reported, and
@@ -410,8 +410,8 @@ reports the rule as unknown and discards the entire block.</p>
 <code>flex</code> installs adw-gtk3 from the upstream release tarball,
 pinned:</p>
 <div class="sourceCode" id="cb14"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> ADW_VERSION flex</span></code></pre></div>
-<pre class="plaintext"><code>ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> ADW_VERSION flex</span>
+ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre></div>
 <p>Upstream's own release notes, read in order, are unambiguous about
 what that pin means:</p>
 <p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-3.png"
@@ -423,9 +423,9 @@ versions below the pin.</p>
 <p><code>git log</code> says the pin was never wrong <em>later</em>; it
 was wrong from the start:</p>
 <div class="sourceCode" id="cb16"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> log <span class="at">--oneline</span> <span class="at">-L58,58:flex</span></span></code></pre></div>
-<pre class="plaintext"><code>12a0ddc Add flex: Debian desktop customization to mimic ChromeOS Flex
-+ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> log <span class="at">--oneline</span> <span class="at">-L58,58:flex</span></span>
+12a0ddc Add flex: Debian desktop customization to mimic ChromeOS Flex
++ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre></div>
 <p>The newest release at the time, taken as the right one because it was
 newest, never checked against the desktop it had to run on.</p>
 <h4 id="why-nothing-looked-wrong">Why Nothing Looked Wrong</h4>
@@ -441,15 +441,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href=
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> <span class="va">$(</span><span class="bu">cd</span> <span class="va">$T</span>/adw-gtk3/gtk-4.0 <span class="kw">&amp;&amp;</span> <span class="fu">find</span> . <span class="at">-type</span> f <span class="kw">|</span> <span class="fu">sort</span><span class="va">)</span><span class="kw">;</span> <span class="cf">do</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cmp</span> <span class="at">-s</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/adw-gtk3/gtk-4.0/</span><span class="va">$f</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/adw-gtk3-dark/gtk-4.0/</span><span class="va">$f</span><span class="st">&quot;</span> <span class="dt">\</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;identical: </span><span class="va">$f</span><span class="st">&quot;</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;DIFFERS:   </span><span class="va">$f</span><span class="st">&quot;</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
-<pre class="plaintext"><code>identical: ./assets/bullet-symbolic.svg
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+identical: ./assets/bullet-symbolic.svg
 identical: ./assets/check-symbolic.svg
 identical: ./assets/dash-symbolic.svg
 identical: ./assets/devel-symbolic.svg
 identical: ./gtk.css
 identical: ./gtk-dark.css
 identical: ./libadwaita.css
-identical: ./libadwaita-tweaks.css</code></pre>
+identical: ./libadwaita-tweaks.css</code></pre></div>
 <p>At v6.5, <strong>every one of the eight files under
 <code>gtk-4.0/</code> is byte-identical between <code>adw-gtk3</code>
 and <code>adw-gtk3-dark</code>.</strong> From v6.4 upstream stopped
@@ -479,9 +479,9 @@ Bug It Exposed</h4>
 <p>Moving the pin to <code>v5.7</code> is one line. Applying it was not,
 and the reason is a bug the first bug was hiding.</p>
 <div class="sourceCode" id="cb21"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> flex theme</span></code></pre></div>
-<pre class="plaintext"><code>==&gt; theme: adw-gtk3 v5.7 into /home/xbill/.local/share/themes
-    already installed -- skipping</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> flex theme</span>
+==&gt; theme: adw-gtk3 v5.7 into /home/xbill/.local/share/themes
+    already installed -- skipping</code></pre></div>
 <p>The stage's idempotence guard tested that the theme <em>directories
 existed</em>, not which version was in them. That is fine while the pin
 is right and fatal once it is wrong: <strong>correcting the pin was a
@@ -504,10 +504,9 @@ of v6.5 would have left both files orphaned on disk, imported by nothing
 and still found by anything globbing the directory.</p>
 <p>Re-run, and the two themes are two themes again:</p>
 <pre class="plaintext"><code>adw-gtk3/gtk-4.0/gtk.css:      @define-color window_bg_color #fafafb;
-adw-gtk3-dark/gtk-4.0/gtk.css: @define-color window_bg_color #222226;</code></pre>
-<div class="sourceCode" id="cb25"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-o</span> cat <span class="at">-q</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;Theme parser error&quot;</span></span></code></pre></div>
-<pre class="plaintext"><code>0</code></pre>
+adw-gtk3-dark/gtk-4.0/gtk.css: @define-color window_bg_color #222226;
+<span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-o</span> cat <span class="at">-q</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;Theme parser error&quot;</span></span>
+0</code></pre>
 <p><strong>2,093 to 0</strong>, and <code>warning</code>-and-above for
 the whole system fell from 1,032 to 151. ✅</p>
 <h4 id="the-same-loop-three-more-times">The Same Loop, Three More
@@ -521,12 +520,12 @@ you must refuse to act on</h4>
 <p>The kernel log's firmware section looks alarming and mostly is
 not:</p>
 <div class="sourceCode" id="cb27"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-k</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> iwlwifi</span></code></pre></div>
-<pre class="plaintext"><code>iwlwifi 0000:00:14.3: Detected Intel(R) Wi-Fi 6 AX201 160MHz
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-k</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> iwlwifi</span>
+iwlwifi 0000:00:14.3: Detected Intel(R) Wi-Fi 6 AX201 160MHz
 iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
 iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
 iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
-iwlwifi 0000:00:14.3: loaded firmware version 77.2753b721.0 QuZ-a0-hr-b0-77.ucode</code></pre>
+iwlwifi 0000:00:14.3: loaded firmware version 77.2753b721.0 QuZ-a0-hr-b0-77.ucode</code></pre></div>
 <p>Three failures, then success. <code>iwl-debug-yoyo.bin</code> is an
 optional debug blob that Debian does not ship and the driver does not
 need; the device is working. <strong>An agent that treats "failed" as
@@ -537,9 +536,9 @@ of the log.</p>
 <p>The genuinely interesting driver finding was on the other side, and
 it is a non-event worth confirming rather than assuming:</p>
 <div class="sourceCode" id="cb29"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dkms status</span></code></pre></div>
-<pre class="plaintext"><code>nvidia/610.57.04, 6.12.107+deb13-amd64, x86_64: installed
-nvidia/610.57.04, 7.1.8+deb13-amd64, x86_64: installed</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dkms status</span>
+nvidia/610.57.04, 6.12.107+deb13-amd64, x86_64: installed
+nvidia/610.57.04, 7.1.8+deb13-amd64, x86_64: installed</code></pre></div>
 <p>This machine runs a <strong>backports kernel</strong> with an
 out-of-tree NVIDIA module, which is the configuration most likely to
 break on an upgrade. DKMS had rebuilt against both kernels, and both
@@ -556,9 +555,9 @@ what apt declares against what apt will serve</h4>
 <p><code>apt</code> will happily tell you a package is available without
 telling you it will never choose it:</p>
 <div class="sourceCode" id="cb32"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">apt-cache</span> policy <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A1</span> backports <span class="kw">|</span> <span class="fu">head</span> <span class="at">-4</span></span></code></pre></div>
-<pre class="plaintext"><code> 100 https://deb.debian.org/debian trixie-backports/main amd64 Packages
-     release o=Debian Backports,a=stable-backports,n=trixie-backports</code></pre>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">apt-cache</span> policy <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A1</span> backports <span class="kw">|</span> <span class="fu">head</span> <span class="at">-4</span></span>
+ 100 https://deb.debian.org/debian trixie-backports/main amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports</code></pre></div>
 <p><strong>Priority 100 against 500 for everything else.</strong>
 Backports is enabled and will never be selected automatically — which is
 correct, and is also why the running kernel had to be asked for by name.
@@ -609,10 +608,10 @@ nothing is now blocking on it. Docker started clean.</p>
 <h4 id="and-the-loop-immediately-found-the-next-thing">And the loop
 immediately found the next thing</h4>
 <div class="sourceCode" id="cb36"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> blame <span class="kw">|</span> <span class="fu">head</span> <span class="at">-3</span></span></code></pre></div>
-<pre class="plaintext"><code>3.303s nvidia-persistenced.service
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> blame <span class="kw">|</span> <span class="fu">head</span> <span class="at">-3</span></span>
+3.303s nvidia-persistenced.service
 2.689s plymouth-quit-wait.service
-2.208s thermald.service</code></pre>
+2.208s thermald.service</code></pre></div>
 <p><code>nvidia-persistenced</code> is now <strong>3.303 s of a 4.941 s
 userspace boot</strong> and sits on the critical chain where
 <code>wait-online</code> used to. That is not a disappointment; it is
@@ -672,31 +671,31 @@ settings panel only ever shows you what was declared.</p>
 <div class="sourceCode" id="cb38"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 0. can you actually see the system&#39;s evidence, or only your own?</span></span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-o</span> <span class="st">&#39;adm\|systemd-journal&#39;</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;unprivileged view -- use sudo&quot;</span></span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. volume first, at warning, not just err</span></span>
 <span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> err     <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
 <span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. collapse a thousand lines into distinct problems</span></span>
 <span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="dt">\</span></span>
 <span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;s/[0-9a-f]\{8,\}/HEX/g; s/[0-9]\+/N/g&#39;</span> <span class="dt">\</span></span>
 <span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-20</span></span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. attribute by payload, not by _COMM</span></span>
 <span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;&lt;pattern&gt;&quot;</span> <span class="dt">\</span></span>
 <span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">&#39;s/^\(([a-zA-Z0-9_.-]+):[0-9]+\).*/\1/&#39;</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span></span>
-<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. what is in the way of the desktop -- not what is slow</span></span>
 <span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span></span>
 <span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> critical-chain</span>
 <span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> blame <span class="kw">|</span> <span class="fu">head</span> <span class="at">-10</span></span>
-<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. out-of-tree modules against every installed kernel</span></span>
 <span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dkms status <span class="kw">;</span> <span class="fu">cat</span> /proc/sys/kernel/tainted <span class="kw">;</span> <span class="ex">mokutil</span> <span class="at">--sb-state</span></span>
-<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-25"><a href="#cb38-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. what apt will actually serve you, priorities included</span></span>
 <span id="cb38-26"><a href="#cb38-26" aria-hidden="true" tabindex="-1"></a><span class="ex">apt-cache</span> policy <span class="kw">;</span> <span class="ex">apt</span> list <span class="at">--upgradable</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">;</span> <span class="ex">dpkg</span> <span class="at">-l</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^rc&#39;</span></span>
-<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb38-28"><a href="#cb38-28" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. re-read the exact query that found it -- this is the step that confirms</span></span></code></pre></div>
 <h4 id="summary">Summary</h4>
 <p>The goal of this article was to find out what a correctly-behaving

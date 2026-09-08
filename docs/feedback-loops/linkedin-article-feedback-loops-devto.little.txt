@@ -1,0 +1,12 @@
+The Desktop Looked Right: 2,093 Parse Errors a Boot, and 10.9 Seconds That Weren't Doing Anything
+
+A Debian desktop that looked and behaved correctly was throwing 2,093 CSS parse errors per boot and spending 10.9 seconds of a 39-second boot waiting on nothing. Neither is visible on screen. Both are in the journal, and both were introduced by the script that was supposed to set the machine up.
+
+What is in it:
+
+- 2,093 CSS parse errors per boot went to 0. The theme pin was two major versions above what the desktop's GTK could parse, from the first commit that introduced it.
+- System-wide warning-and-above fell 1,032 → 151. err-and-above stayed at 17, correctly — none of those were theme-related.
+- 46 of 154 \@define-color rules were being discarded, and all eight gtk-4.0 files were byte-identical between the light and dark themes, so the mode switcher could not change a GTK4 application at all.
+- Boot went 39.324 s → 27.144 s, of which −10.9 s is attributable — 5.238 s of GRUB timeout and 5.685 s of NetworkManager-wait-online — with the untouched phases drifting −1.255 s as noise.
+
+Source: https://github.com/xbill9/chromeos-boot

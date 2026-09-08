@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>The Desktop Looked Right: 2,093 Parse Errors a Boot, and 10.9 Seconds That Weren't Doing Anything</title>
+  <meta name="description" content="A Debian desktop that looked and behaved correctly was throwing 2,093 CSS parse errors per boot and spending 10.9 seconds of a 39-second boot waiting on nothing. Neither is visible on screen. Both are in the journal, and both were introduced by the script that was supposed to set the machine up." />
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    body{font-family:-apple-system,'Segoe UI',Roboto,'Liberation Sans',Arial,sans-serif;
+         font-size:18px;line-height:1.58;max-width:42em;color:#242424;}
+    h1,h2,h3,h4{font-weight:700;line-height:1.25;margin-top:1.8em;}
+    h4{font-size:1.25em;}
+    img{max-width:100%;height:auto;display:block;margin:1.6em 0;}
+    pre{background:#f7f7f7;border:1px solid #e6e6e6;border-radius:4px;
+        padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.45;}
+    code{font-family:'Liberation Mono',Menlo,Consolas,monospace;}
+    :not(pre)>code{background:#f2f2f2;padding:1px 5px;border-radius:3px;font-size:.9em;}
+    blockquote{border-left:3px solid #ddd;margin-left:0;padding-left:1em;color:#555;}
+    hr{border:0;border-top:1px solid #e6e6e6;margin:2.4em 0;}
+  </style>
+</head>
+<body>
+<figure><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/cover.33f0beb1.jpg" alt="The Desktop Looked Right: 2,093 Parse Errors a Boot, and 10.9 Seconds That Weren&#x27;t Doing Anything" /></figure>
+<header id="title-block-header" hidden>
+<h1 class="title">The Desktop Looked Right: 2,093 Parse Errors a Boot,
+and 10.9 Seconds That Weren't Doing Anything</h1>
+</header>
+<p>This article walks through one afternoon of Debian system management,
+in which the machine turned out to have been reporting two of its own
+defects continuously, for as long as it had been configured, to
+nobody.</p>
+<p><strong>Debian tells you almost everything. It just does not tell you
+on screen.</strong> The kernel ring buffer, the systemd journal,
+<code>systemd-analyze</code>, <code>dpkg</code>,
+<code>apt-cache policy</code> and <code>/sys</code> between them
+describe the state of the machine in far more detail than any settings
+panel — and a desktop can look completely correct while those sources
+are recording a failure a few hundred times a minute.</p>
+<p>What that gap creates is a feedback loop with a missing half. The
+machine emits the evidence; nothing reads it. The two defects below had
+both been present since the day the setup script was written, both were
+sitting in plain text in the journal, and neither was discoverable from
+the desktop:</p>
+<ul>
+<li>The GTK theme was <strong>discarded at parse time</strong>, 161
+rules per application launch, <strong>2,093 log lines in the boot I
+measured</strong>, while reporting success and looking approximately
+right.</li>
+<li><strong>10.9 seconds of a 39.3-second boot</strong> were spent
+waiting for something nothing was waiting for.</li>
+</ul>
+<p>Both were introduced by <code>flex</code>, the script in this
+repository whose job is to configure the machine:</p>
+<p><a
+href="https://github.com/xbill9/chromeos-boot">https://github.com/xbill9/chromeos-boot</a></p>
+<h4 id="the-machine">The Machine</h4>
+<p>One laptop, measured on 2026-09-08:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-1.png"
+alt="table" /></p>
+<p>That GTK version is the whole article, and nothing on the desktop
+ever mentions it.</p>
+<h4 id="at-this-point-you-should-have">At This Point You Should
+Have</h4>
+<ul>
+<li>A Debian desktop you have customised with something — a script, a
+dotfile repo, a settings panel, an afternoon of <code>gsettings</code> —
+and that appears to work</li>
+<li><code>sudo</code>, or membership of <code>adm</code> /
+<code>systemd-journal</code>. <strong>Check this first</strong>, for
+reasons in Step 0</li>
+<li><code>systemd-analyze</code>, <code>journalctl</code>,
+<code>dpkg</code>, <code>apt-cache</code> — all base install</li>
+<li>Somewhere durable to write findings that is not your shell
+scrollback</li>
+</ul>
+<p>None of the diagnosis below changes anything. Steps 0 through 3 are
+reads.</p>
+<h4 id="step-0--find-out-whether-you-can-read-the-evidence-at-all">Step
+0 — Find Out Whether You Can Read the Evidence At All</h4>
+<p>This step exists because the investigation nearly started with a
+wrong answer.</p>
+<p>The first <code>journalctl</code> run reported four errors this boot,
+all of them GNOME session scopes failing to start, and that looked like
+the whole picture. It was not the whole picture. It was the picture
+available to an unprivileged user:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span></span></code></pre></div>
+<pre class="plaintext"><code>uid=1000(xbill) gid=1000(xbill) groups=1000(xbill),24(cdrom),25(floppy),
+27(sudo),29(audio),30(dip),44(video),46(plugdev),100(users),101(netdev),
+102(scanner),106(bluetooth),108(lpadmin),989(docker),992(render)</code></pre>
+<p><strong>No <code>adm</code>, no
+<code>systemd-journal</code>.</strong> Without either,
+<code>journalctl</code> silently narrows to your own user journal rather
+than refusing — you get output, it is correctly formatted, and it is a
+small fraction of what happened. The kernel buffer is closed off
+separately:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmesg</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-3</span></span></code></pre></div>
+<pre class="plaintext"><code>dmesg: read kernel buffer failed: Operation not permitted</code></pre>
+<p>The difference between the two views on this machine:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-2.png"
+alt="table" /></p>
+<p>Four against seventeen, and nothing in the first view indicates the
+other thirteen exist. <strong>A loop that reads a filtered log converges
+on a wrong answer confidently</strong>, which is worse than not reading
+it. Add yourself to <code>adm</code> and log back in, or accept that
+everything downstream needs <code>sudo</code> — but decide it
+deliberately, because the failure mode is silence, not an error.</p>
+<h4 id="step-1--count-before-you-read">Step 1 — Count Before You
+Read</h4>
+<p><code>err</code> and above is where people look, and on this machine
+it was almost entirely a red herring. The volume was one priority
+down:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> err     <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div>
+<pre class="plaintext"><code>17
+1032</code></pre>
+<p>A thousand warnings is too many to read, so collapse them into shapes
+first. Normalising the numbers and hex out of each message turns a
+thousand lines into a histogram of distinct problems:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="dt">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;s/[0-9a-f]\{8,\}/HEX/g; s/[0-9]\+/N/g&#39;</span> <span class="dt">\</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-5</span></span></code></pre></div>
+<pre class="plaintext"><code>    795 Theme parser error: libadwaita.css:N:N-N: Unknown @ rule
+     27 blacklist: Duplicate blacklisted hash bin:HEX
+     24 Can&#39;t update stage views actor unnamed [StBin] is on because it needs an allocation.
+     10 Theme parser error: libadwaita-tweaks.css:N:N-N: Unknown @ rule
+      7 Unable to get default source</code></pre>
+<p><strong>805 of the 1,032 warnings on this system were one
+defect.</strong> It had never appeared on screen, in any settings panel,
+or in the output of the script that caused it — which had reported, and
+still reports, success.</p>
+<h4 id="step-2--attribute-the-message-before-you-believe-the-field">Step
+2 — Attribute the Message Before You Believe the Field</h4>
+<p>The obvious next question is which program is producing them, and the
+obvious way to ask is the journal's own <code>_COMM</code> field. That
+gives a wrong answer, and it is worth showing because the same trap
+applies to any log the agent will read.</p>
+<pre class="plaintext"><code>  1288  cat
+   322  gnome-control-c
+   161  gnome-software
+   161  xdg-desktop-por
+   161  mutter-x11-fram</code></pre>
+<p><code>cat</code> is not a GTK application and does not parse
+stylesheets. Pulling one of those 1,288 records apart explains it:</p>
+<pre class="plaintext"><code>_COMM=cat  _PID=11105  _EXE=/usr/bin/cat
+MESSAGE=(chrome:11097): Gtk-WARNING **: 09:20:36.757: Theme parser error: ...</code></pre>
+<p>The webapp launchers this repository installs pipe their stderr, so
+journald attributes the line to the process that <em>wrote</em> it
+rather than the process that <em>produced</em> it. The real emitter is
+in the message payload, in the <code>(name:pid)</code> prefix that GLib
+puts there.</p>
+<p><strong>The structured field describes the plumbing; the unstructured
+payload describes the event.</strong> Grouping by <code>_COMM</code>
+credits 1,288 parse errors to <code>cat</code> and hides Chrome
+entirely. Parse the prefix instead:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;Theme parser error: libadwaita&quot;</span> <span class="dt">\</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">&#39;s/^\(([a-zA-Z0-9_.-]+):[0-9]+\).*/\1/&#39;</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span></span></code></pre></div>
+<p>Corrected, the emitters are <code>gnome-control-center</code>,
+<code>gnome-software</code>, <code>xdg-desktop-portal-gtk</code>,
+<code>mutter-x11-frames</code> and Chrome — every GTK4 process on the
+system, each one failing identically, every time it starts.</p>
+<h4 id="what-the-theme-declared-and-what-gtk-served">What the Theme
+Declared, and What GTK Served</h4>
+<p>161 distinct parse failures per process: 159 in
+<code>libadwaita.css</code>, 2 in <code>libadwaita-tweaks.css</code>. At
+<code>warning</code> and above each one appeared exactly five times —
+159 × 5 = 795, 2 × 5 = 10 — one set per GTK4 process running at boot.
+Across all priorities, including the Chrome instances started later from
+the shelf, <strong>2,093 lines in one boot.</strong></p>
+<p>The message names the construct:</p>
+<pre class="plaintext"><code>Theme parser error: libadwaita.css:94:1-7: Unknown @ rule</code></pre>
+<p>Columns 1-7 of line 94:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">@media</span> <span class="fu">(</span><span class="kw">prefers-color-scheme</span><span class="ch">:</span> <span class="dv">dark</span><span class="fu">)</span> { <span class="im">@define-color</span> window_bg_color #222226<span class="op">;</span> ... }</span></code></pre></div>
+<p><code>@media</code>. GTK's CSS parser is not a browser's, and
+<strong>GTK 4.18 does not implement <code>@media</code>.</strong> It
+reports the rule as unknown and discards the entire block.</p>
+<p>Which block is discarded matters more than the noise.
+<code>flex</code> installs adw-gtk3 from the upstream release tarball,
+pinned:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> ADW_VERSION flex</span></code></pre></div>
+<pre class="plaintext"><code>ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre>
+<p>Upstream's own release notes, read in order, are unambiguous about
+what that pin means:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-3.png"
+alt="table" /></p>
+<p>The machine runs GNOME 48, GTK 4.18.6 and libadwaita 1.7.6. The pin
+was <code>v6.5</code> — GNOME 50, GTK 4.20+. There is a release named
+for this exact platform, in upstream's own words, and it is two major
+versions below the pin.</p>
+<p><code>git log</code> says the pin was never wrong <em>later</em>; it
+was wrong from the start:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> log <span class="at">--oneline</span> <span class="at">-L58,58:flex</span></span></code></pre></div>
+<pre class="plaintext"><code>12a0ddc Add flex: Debian desktop customization to mimic ChromeOS Flex
++ADW_VERSION=${ADW_VERSION:-v6.5}</code></pre>
+<p>The newest release at the time, taken as the right one because it was
+newest, never checked against the desktop it had to run on.</p>
+<h4 id="why-nothing-looked-wrong">Why Nothing Looked Wrong</h4>
+<p>A theme silently dropping 159 rule blocks should be visible, and it
+was not. Two reasons, and the second is the expensive one.</p>
+<p>First, libadwaita applications largely do not use the GTK theme at
+all — they carry their own stylesheet and follow
+<code>color-scheme</code> directly. Most of the desktop stayed dark
+because most of the desktop was never asking the theme.</p>
+<p>Second, and much worse:</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="va">T</span><span class="op">=</span>~/.local/share/themes</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> <span class="va">$(</span><span class="bu">cd</span> <span class="va">$T</span>/adw-gtk3/gtk-4.0 <span class="kw">&amp;&amp;</span> <span class="fu">find</span> . <span class="at">-type</span> f <span class="kw">|</span> <span class="fu">sort</span><span class="va">)</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cmp</span> <span class="at">-s</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/adw-gtk3/gtk-4.0/</span><span class="va">$f</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/adw-gtk3-dark/gtk-4.0/</span><span class="va">$f</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;identical: </span><span class="va">$f</span><span class="st">&quot;</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;DIFFERS:   </span><span class="va">$f</span><span class="st">&quot;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<pre class="plaintext"><code>identical: ./assets/bullet-symbolic.svg
+identical: ./assets/check-symbolic.svg
+identical: ./assets/dash-symbolic.svg
+identical: ./assets/devel-symbolic.svg
+identical: ./gtk.css
+identical: ./gtk-dark.css
+identical: ./libadwaita.css
+identical: ./libadwaita-tweaks.css</code></pre>
+<p>At v6.5, <strong>every one of the eight files under
+<code>gtk-4.0/</code> is byte-identical between <code>adw-gtk3</code>
+and <code>adw-gtk3-dark</code>.</strong> From v6.4 upstream stopped
+shipping two GTK4 stylesheets. There is one file, and dark is selected
+at runtime by the <code>@media</code> query — the query GTK 4.18 throws
+away.</p>
+<p>So the dark theme's own file defines the light value,
+unconditionally, and the dark value only inside the block that never
+executes:</p>
+<pre class="plaintext"><code>adw-gtk3-dark/gtk-4.0/libadwaita.css:62:
+    @define-color window_bg_color #fafafb;      &lt;- light, applied
+inside @media (prefers-color-scheme: dark):
+    @define-color window_bg_color #222226;      &lt;- dark, discarded</code></pre>
+<p><strong>46 of the 154 <code>@define-color</code> rules in that file
+are inside <code>@media</code> blocks.</strong> All 46 were being
+dropped. And because the two GTK4 trees are identical,
+<code>set-mode.sh</code> — the helper this repository installs
+specifically to flip light and dark — could not change a GTK4
+application's palette at all. It flipped a setting between two names
+that pointed at the same bytes.</p>
+<p>That is the shape of the whole problem: <strong>the setting declared
+a dark theme, and the filesystem served a light one.</strong> Nothing in
+the declaring layer knows what the serving layer did with it, and the
+only place the two are compared is the log.</p>
+<h4 id="the-fix-and-the-second-bug-it-exposed">The Fix, and the Second
+Bug It Exposed</h4>
+<p>Moving the pin to <code>v5.7</code> is one line. Applying it was not,
+and the reason is a bug the first bug was hiding.</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> flex theme</span></code></pre></div>
+<pre class="plaintext"><code>==&gt; theme: adw-gtk3 v5.7 into /home/xbill/.local/share/themes
+    already installed -- skipping</code></pre>
+<p>The stage's idempotence guard tested that the theme <em>directories
+existed</em>, not which version was in them. That is fine while the pin
+is right and fatal once it is wrong: <strong>correcting the pin was a
+no-op, because the evidence of the bad install was also the thing that
+suppressed the repair.</strong> Every re-run confirmed the wrong
+theme.</p>
+<p>Idempotence has to mean "on the pinned version", not "something is
+there". The guard now records what it installed and compares:</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode sh"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-d</span> <span class="st">&quot;</span><span class="va">$THEMES</span><span class="st">/adw-gtk3-dark&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="bu">[</span> <span class="ot">-d</span> <span class="st">&quot;</span><span class="va">$THEMES</span><span class="st">/adw-gtk3&quot;</span> <span class="bu">]</span> <span class="dt">\</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">&amp;&amp;</span> <span class="bu">[</span> <span class="st">&quot;</span><span class="kw">`</span><span class="fu">cat</span> <span class="st">&quot;</span><span class="va">$THEMES</span><span class="st">/.adw-gtk3-version&quot;</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null<span class="kw">`</span><span class="st">&quot;</span> <span class="ot">=</span> <span class="st">&quot;</span><span class="va">$ADW_VERSION</span><span class="st">&quot;</span> <span class="bu">]</span> <span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">step</span> <span class="st">&quot;already installed at </span><span class="va">$ADW_VERSION</span><span class="st"> -- skipping&quot;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div>
+<p>It also removes the old tree before extracting rather than unpacking
+over it. The layout changed between the two releases — v6.3 added
+<code>libadwaita.css</code> and <code>libadwaita-tweaks.css</code> to
+<code>gtk-4.0</code>, and v5.7 has neither — so extracting v5.7 on top
+of v6.5 would have left both files orphaned on disk, imported by nothing
+and still found by anything globbing the directory.</p>
+<p>Re-run, and the two themes are two themes again:</p>
+<pre class="plaintext"><code>adw-gtk3/gtk-4.0/gtk.css:      @define-color window_bg_color #fafafb;
+adw-gtk3-dark/gtk-4.0/gtk.css: @define-color window_bg_color #222226;</code></pre>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-o</span> cat <span class="at">-q</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;Theme parser error&quot;</span></span></code></pre></div>
+<pre class="plaintext"><code>0</code></pre>
+<p><strong>2,093 to 0</strong>, and <code>warning</code>-and-above for
+the whole system fell from 1,032 to 151. ✅</p>
+<h4 id="the-same-loop-three-more-times">The Same Loop, Three More
+Times</h4>
+<p>One defect found this way could be luck. The value is in the loop, so
+it is worth running it against three other subsystems — each with its
+own evidence source, and each teaching something different about how to
+read one.</p>
+<h4 id="drivers-the-error-you-must-refuse-to-act-on">Drivers: the error
+you must refuse to act on</h4>
+<p>The kernel log's firmware section looks alarming and mostly is
+not:</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-k</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> iwlwifi</span></code></pre></div>
+<pre class="plaintext"><code>iwlwifi 0000:00:14.3: Detected Intel(R) Wi-Fi 6 AX201 160MHz
+iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
+iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
+iwlwifi 0000:00:14.3: firmware: failed to load iwl-debug-yoyo.bin (-2)
+iwlwifi 0000:00:14.3: loaded firmware version 77.2753b721.0 QuZ-a0-hr-b0-77.ucode</code></pre>
+<p>Three failures, then success. <code>iwl-debug-yoyo.bin</code> is an
+optional debug blob that Debian does not ship and the driver does not
+need; the device is working. <strong>An agent that treats "failed" as
+actionable installs packages to fix a working radio.</strong> The
+correction is cheap and general: read the lines <em>after</em> the error
+before acting on it, and prefer the state of the device to the wording
+of the log.</p>
+<p>The genuinely interesting driver finding was on the other side, and
+it is a non-event worth confirming rather than assuming:</p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dkms status</span></code></pre></div>
+<pre class="plaintext"><code>nvidia/610.57.04, 6.12.107+deb13-amd64, x86_64: installed
+nvidia/610.57.04, 7.1.8+deb13-amd64, x86_64: installed</code></pre>
+<p>This machine runs a <strong>backports kernel</strong> with an
+out-of-tree NVIDIA module, which is the configuration most likely to
+break on an upgrade. DKMS had rebuilt against both kernels, and both
+header packages are present — so the next kernel will not silently land
+without a GPU. The taint word says exactly what is loaded and why:</p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /proc/sys/kernel/tainted     <span class="co"># 12289 -&gt; bits 0, 12, 13</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ex">mokutil</span> <span class="at">--sb-state</span>               <span class="co"># SecureBoot disabled</span></span></code></pre></div>
+<p>Proprietary, out-of-tree, unsigned — all three expected here, and all
+three would be worth an alarm on a machine where Secure Boot was on.</p>
+<h4
+id="packages-what-apt-declares-against-what-apt-will-serve">Packages:
+what apt declares against what apt will serve</h4>
+<p><code>apt</code> will happily tell you a package is available without
+telling you it will never choose it:</p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">apt-cache</span> policy <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A1</span> backports <span class="kw">|</span> <span class="fu">head</span> <span class="at">-4</span></span></code></pre></div>
+<pre class="plaintext"><code> 100 https://deb.debian.org/debian trixie-backports/main amd64 Packages
+     release o=Debian Backports,a=stable-backports,n=trixie-backports</code></pre>
+<p><strong>Priority 100 against 500 for everything else.</strong>
+Backports is enabled and will never be selected automatically — which is
+correct, and is also why the running kernel had to be asked for by name.
+Six third-party origins are configured on this box (Docker, Chrome,
+cloud-sdk, CUDA, Claude Desktop, and backports), and
+<code>apt-cache policy</code> is the only place that relationship is
+written down.</p>
+<p>The rest of the package state was one line of debris and one pending
+upgrade:</p>
+<pre class="plaintext"><code>rc  linux-image-6.12.94+deb13-amd64   (removed, config files remain)
+containerd.io  2.3.4 -&gt; 2.3.5  (upgradable)</code></pre>
+<p>Neither is a problem. Both are the kind of thing that is invisible
+until something asks.</p>
+<h4 id="tuning-the-wait-that-nothing-was-waiting-for">Tuning: the wait
+that nothing was waiting for</h4>
+<p><code>systemd-analyze</code> is the least-used excellent tool on a
+Debian desktop, because it does not report which unit is <em>slow</em> —
+it reports which unit is <em>in the way</em>:</p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> critical-chain</span></code></pre></div>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-diagram-1.png"
+alt="diagram" /></p>
+<p><strong>7.774 seconds, on the path to the desktop appearing, spent
+blocking until the network was routable</strong> — because
+<code>docker.service</code> asks for <code>network-online.target</code>
+and <code>NetworkManager-wait-online</code> is what satisfies it. Docker
+does not need a routable address at start; it needs one when a container
+asks. The dependency is a default, not a decision.</p>
+<p>And one phase up, the loader was carrying a 5-second GRUB menu nobody
+reads — on a machine whose own repository already ships
+<code>boot-splash.sh</code> to remove it, documented as
+installed-but-never-run.</p>
+<p>Both changed, one reboot, measured:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/chromeos-boot/main/docs/feedback-loops/medium/img/article-feedback-loops-devto-table-4.png"
+alt="table" /></p>
+<p><strong>The attributable figure is −10.9 s, not −12.180 s</strong>,
+and the table says why. Firmware and kernel are phases nothing in this
+change touches, and they moved by −1.255 s between the two runs on their
+own. That is the run-to-run noise of the measurement, and it is the
+reason the two columns cannot simply be subtracted: <em>a change
+measured against the previous boot is measured against time as
+well.</em> One boot either side is a weak design, and the honest claim
+is a bound — around eleven seconds, of which 5.238 s and 5.685 s land in
+exactly the two phases that were altered.</p>
+<p><code>network-online.target</code> is still reached, incidentally. It
+is reached at <strong>@1.720 s instead of @9.505 s</strong>, because
+nothing is now blocking on it. Docker started clean.</p>
+<h4 id="and-the-loop-immediately-found-the-next-thing">And the loop
+immediately found the next thing</h4>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> blame <span class="kw">|</span> <span class="fu">head</span> <span class="at">-3</span></span></code></pre></div>
+<pre class="plaintext"><code>3.303s nvidia-persistenced.service
+2.689s plymouth-quit-wait.service
+2.208s thermald.service</code></pre>
+<p><code>nvidia-persistenced</code> is now <strong>3.303 s of a 4.941 s
+userspace boot</strong> and sits on the critical chain where
+<code>wait-online</code> used to. That is not a disappointment; it is
+the loop working. Removing the largest cost promotes the next one into
+view, and it was invisible while a 7.8-second wait was in front of it.
+✅</p>
+<h4 id="where-the-agent-actually-fits">Where the Agent Actually
+Fits</h4>
+<p>Nothing above required a capability Debian was missing. Every number
+came from <code>journalctl</code>, <code>systemd-analyze</code>,
+<code>dpkg</code>, <code>dkms</code>, <code>apt-cache</code> and
+<code>cmp</code> — all of them installed, all of them documented, none
+of them new. The evidence had been there, in the same files, since the
+machine was configured.</p>
+<p>What was missing was the other half of the loop: <strong>something
+willing to read a thousand warnings, at the moment they stop being free
+to ignore.</strong></p>
+<p>That is a specific job, and it is worth being precise about which
+parts of it are the agent's:</p>
+<ul>
+<li><strong>Reading at volume without triage fatigue.</strong> 1,032
+warnings is where a human starts sampling. The 805-line defect was in
+the histogram's first row, and the histogram is trivial to build — the
+reason nobody had built it is that nobody had a reason to.</li>
+<li><strong>Correlating across sources that share no
+vocabulary.</strong> The finding needed a journal message, a CSS file, a
+<code>dpkg -l</code> version, four GitHub release notes and a
+<code>git log -L</code> on one line of a shell script. Each is
+unremarkable alone.</li>
+<li><strong>Acting, then re-reading.</strong> The fix is only confirmed
+by the same query that found it returning 0 — and by
+<code>warning+</code> dropping 1,032 → 151, which is a different check
+than "the desktop still looks fine".</li>
+</ul>
+<p>And the parts that are not:</p>
+<ul>
+<li><strong>Deciding what is worth fixing.</strong> The
+<code>iwlwifi</code> line is a failure the correct action is to ignore.
+An agent that treats every <code>error</code> as work will find plenty
+of it.</li>
+<li><strong>Anything that touches the boot chain.</strong>
+<code>boot-splash.sh</code> is in this repository precisely because it
+edits GRUB, and this repository deliberately never runs it for you.
+Reading it first was a human decision; so was accepting that Docker
+would now start without waiting for the network.</li>
+<li><strong>Believing the log's own metadata.</strong>
+<code>_COMM</code> said <code>cat</code> 1,288 times.</li>
+</ul>
+<p>The loop that produced everything above is four steps and does not
+need tooling: <strong>read the evidence, form a claim about which layer
+disagrees with which, change one thing, re-read the same
+source.</strong> The last step is the one that distinguishes it from a
+guess, and it is the step a settings panel cannot offer, because a
+settings panel only ever shows you what was declared.</p>
+<h4 id="cheat-sheet">Cheat Sheet</h4>
+<p>Nothing here writes:</p>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 0. can you actually see the system&#39;s evidence, or only your own?</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-o</span> <span class="st">&#39;adm\|systemd-journal&#39;</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;unprivileged view -- use sudo&quot;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. volume first, at warning, not just err</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> err     <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. collapse a thousand lines into distinct problems</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-p</span> warning <span class="at">--no-pager</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="dt">\</span></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;s/[0-9a-f]\{8,\}/HEX/g; s/[0-9]\+/N/g&#39;</span> <span class="dt">\</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-20</span></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. attribute by payload, not by _COMM</span></span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> journalctl <span class="at">-b</span> <span class="at">-q</span> <span class="at">-o</span> cat <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;&lt;pattern&gt;&quot;</span> <span class="dt">\</span></span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">&#39;s/^\(([a-zA-Z0-9_.-]+):[0-9]+\).*/\1/&#39;</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-rn</span></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. what is in the way of the desktop -- not what is slow</span></span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span></span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> critical-chain</span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a><span class="ex">systemd-analyze</span> blame <span class="kw">|</span> <span class="fu">head</span> <span class="at">-10</span></span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. out-of-tree modules against every installed kernel</span></span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dkms status <span class="kw">;</span> <span class="fu">cat</span> /proc/sys/kernel/tainted <span class="kw">;</span> <span class="ex">mokutil</span> <span class="at">--sb-state</span></span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. what apt will actually serve you, priorities included</span></span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true" tabindex="-1"></a><span class="ex">apt-cache</span> policy <span class="kw">;</span> <span class="ex">apt</span> list <span class="at">--upgradable</span> <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">;</span> <span class="ex">dpkg</span> <span class="at">-l</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^rc&#39;</span></span>
+<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-28"><a href="#cb38-28" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. re-read the exact query that found it -- this is the step that confirms</span></span></code></pre></div>
+<h4 id="summary">Summary</h4>
+<p>The goal of this article was to find out what a correctly-behaving
+Debian desktop was failing to mention, and whether reading its own logs
+systematically would repay the effort. The key to the solution was
+treating the configuration layer and the serving layer as two separate
+claims that have to be compared — what <code>gsettings</code> declared
+against what GTK parsed, what a unit file requested against what the
+boot actually waited for — because every defect found was invisible in
+the declaring layer and plainly stated in the serving one. The measured
+results were:</p>
+<ul>
+<li><strong>2,093 CSS parse errors per boot went to 0.</strong> The
+theme pin was two major versions above what the desktop's GTK could
+parse, from the first commit that introduced it.</li>
+<li><strong>System-wide <code>warning</code>-and-above fell 1,032 →
+151.</strong> <code>err</code>-and-above stayed at 17, correctly — none
+of those were theme-related.</li>
+<li><strong>46 of 154 <code>@define-color</code> rules were being
+discarded</strong>, and all eight <code>gtk-4.0</code> files were
+byte-identical between the light and dark themes, so the mode switcher
+could not change a GTK4 application at all.</li>
+<li><strong>Boot went 39.324 s → 27.144 s, of which −10.9 s is
+attributable</strong> — 5.238 s of GRUB timeout and 5.685 s of
+<code>NetworkManager-wait-online</code> — with the untouched phases
+drifting −1.255 s as noise.</li>
+<li><strong><code>network-online.target</code> is now reached at @1.720
+s rather than @9.505 s</strong>, and Docker starts clean without it
+being waited on.</li>
+<li><strong>A second bug was hidden by the first</strong>: the theme
+stage's idempotence guard tested only that files existed, so correcting
+the pin was a no-op until the guard was made version-aware.</li>
+</ul>
+<p>Scope: one laptop, one operating system, measured 2026-09-08 on
+Debian 13 with GNOME 48, GTK 4.18.6 and kernel 7.1.8+deb13-amd64 from
+backports. The boot figures are <strong>n = 1 on each side</strong> — a
+single boot before and a single boot after — which is why the
+attributable claim is stated as a bound rather than a measurement, and
+the ±1.255 s drift in the two untouched phases is the only estimate of
+noise available from that design; repeated boots on each configuration
+are queued and would replace it. The 2,093 → 0 result is not subject to
+the same weakness, being a count of a deterministic parse failure rather
+than a timing. Whether any application's appearance visibly changed as a
+result of the theme fix was <strong>not</strong> measured: the five
+confirmed emitters prove the file was parsed, not that a user could see
+the difference, and libadwaita applications never consulted the theme
+either way. <code>nvidia-persistenced</code> at 3.303 s is now the
+largest item on the critical chain and has not been investigated.</p>
+<p>The strategy of reading the system's own evidence at volume,
+attributing it by payload rather than metadata, changing one thing, and
+re-running the query that found it was validated with an incremental
+step by step approach.</p>
+<p><em>Disclosure: I ran this with Claude Code as the diagnostic agent —
+it swept the journal, built the histograms, traced the pin to the
+upstream release notes, wrote the fix and re-measured after the reboot,
+while I steered and made the calls about what to touch. The commands,
+the counts and both defects are real and archived in the
+repository.</em></p>
+</body>
+</html>

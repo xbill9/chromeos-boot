@@ -366,7 +366,7 @@ Both changed, one reboot, measured:
 | phase | before | after | delta | |
 |---|---|---|---|---|
 | firmware | 16.064s | 14.448s | −1.616s | *not touched* |
-| loader | 8.014s | 2.776s | **−5.238s** | `GRUB_TIMEOUT` 5  0 |
+| loader | 8.014s | 2.776s | **−5.238s** | `GRUB_TIMEOUT` 5 → 0 |
 | kernel | 4.617s | 4.978s | +0.361s | *not touched* |
 | userspace | 10.626s | 4.941s | **−5.685s** | `wait-online` disabled |
 | **total** | **39.324s** | **27.144s** | **−12.180s** | |
@@ -405,7 +405,7 @@ That is a specific job, and it is worth being precise about which parts of it ar
   journal message, a CSS file, a `dpkg -l` version, four GitHub release notes and
   a `git log -L` on one line of a shell script. Each is unremarkable alone.
 - **Acting, then re-reading.** The fix is only confirmed by the same query that
-  found it returning 0 — and by `warning+` dropping 1,032  151, which is a
+  found it returning 0 — and by `warning+` dropping 1,032 → 151, which is a
   different check than "the desktop still looks fine".
 
 And the parts that are not:
@@ -463,12 +463,12 @@ The goal of this article was to find out what a correctly-behaving Debian deskto
 - **2,093 CSS parse errors per boot went to 0.** The theme pin was two major
   versions above what the desktop's GTK could parse, from the first commit that
   introduced it.
-- **System-wide `warning`-and-above fell 1,032  151.** `err`-and-above stayed at
+- **System-wide `warning`-and-above fell 1,032 → 151.** `err`-and-above stayed at
   17, correctly — none of those were theme-related.
 - **46 of 154 `@define-color` rules were being discarded**, and all eight
   `gtk-4.0` files were byte-identical between the light and dark themes, so the
   mode switcher could not change a GTK4 application at all.
-- **Boot went 39.324 s  27.144 s, of which −10.9 s is attributable** — 5.238 s
+- **Boot went 39.324 s → 27.144 s, of which −10.9 s is attributable** — 5.238 s
   of GRUB timeout and 5.685 s of `NetworkManager-wait-online` — with the
   untouched phases drifting −1.255 s as noise.
 - **`network-online.target` is now reached at @1.720 s rather than @9.505 s**, and
@@ -477,7 +477,7 @@ The goal of this article was to find out what a correctly-behaving Debian deskto
   tested only that files existed, so correcting the pin was a no-op until the
   guard was made version-aware.
 
-Scope: one laptop, one operating system, measured 2026-09-08 on Debian 13 with GNOME 48, GTK 4.18.6 and kernel 7.1.8+deb13-amd64 from backports. The boot figures are **n = 1 on each side** — a single boot before and a single boot after — which is why the attributable claim is stated as a bound rather than a measurement, and the ±1.255 s drift in the two untouched phases is the only estimate of noise available from that design; repeated boots on each configuration are queued and would replace it. The 2,093  0 result is not subject to the same weakness, being a count of a deterministic parse failure rather than a timing. Whether any application's appearance visibly changed as a result of the theme fix was **not** measured: the five confirmed emitters prove the file was parsed, not that a user could see the difference, and libadwaita applications never consulted the theme either way. `nvidia-persistenced` at 3.303 s is now the largest item on the critical chain and has not been investigated.
+Scope: one laptop, one operating system, measured 2026-09-08 on Debian 13 with GNOME 48, GTK 4.18.6 and kernel 7.1.8+deb13-amd64 from backports. The boot figures are **n = 1 on each side** — a single boot before and a single boot after — which is why the attributable claim is stated as a bound rather than a measurement, and the ±1.255 s drift in the two untouched phases is the only estimate of noise available from that design; repeated boots on each configuration are queued and would replace it. The 2,093 → 0 result is not subject to the same weakness, being a count of a deterministic parse failure rather than a timing. Whether any application's appearance visibly changed as a result of the theme fix was **not** measured: the five confirmed emitters prove the file was parsed, not that a user could see the difference, and libadwaita applications never consulted the theme either way. `nvidia-persistenced` at 3.303 s is now the largest item on the critical chain and has not been investigated.
 
 The strategy of reading the system's own evidence at volume, attributing it by payload rather than metadata, changing one thing, and re-running the query that found it was validated with an incremental step by step approach.
 

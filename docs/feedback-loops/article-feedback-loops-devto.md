@@ -176,10 +176,10 @@ Upstream's own release notes, read in order, are unambiguous about what that pin
 
 | Release | Upstream's note | `@media` in the GTK4 CSS |
 |---|---|---|
-| **v5.7** | "New release for GNOME 48 and libadwaita 1.7" | **0** |
+| **v5.7** | *"New release for GNOME 48 and libadwaita 1.7"* | **0** |
 | v6.3 | last release before the change | 0 |
-| **v6.4** | **"The GTK4 theme now requires GTK 4.20 or later."** | 3 |
-| **v6.5** | "Release for GNOME 50." | **159** |
+| **v6.4** | ***"The GTK4 theme now requires GTK 4.20 or later."*** | 3 |
+| **v6.5** | *"Release for GNOME 50."* | **159** |
 
 The machine runs GNOME 48, GTK 4.18.6 and libadwaita 1.7.6. The pin was `v6.5` — GNOME 50, GTK 4.20+. There is a release named for this exact platform, in upstream's own words, and it is two major versions below the pin.
 
@@ -373,9 +373,9 @@ Both changed, one reboot, measured:
 
 | phase | before | after | delta | |
 |---|---|---|---|---|
-| firmware | 16.064s | 14.448s | −1.616s | (not touched) |
-| loader | 8.014s | 2.776s | **−5.238s** | `GRUB_TIMEOUT` 5 to 0 |
-| kernel | 4.617s | 4.978s | +0.361s | (not touched) |
+| firmware | 16.064s | 14.448s | −1.616s | *not touched* |
+| loader | 8.014s | 2.776s | **−5.238s** | `GRUB_TIMEOUT` 5 → 0 |
+| kernel | 4.617s | 4.978s | +0.361s | *not touched* |
 | userspace | 10.626s | 4.941s | **−5.685s** | `wait-online` disabled |
 | **total** | **39.324s** | **27.144s** | **−12.180s** | |
 

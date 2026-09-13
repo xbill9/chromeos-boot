@@ -84,7 +84,7 @@ Two things then need the steps above to have finished:
 5. Installs the phone tools — `adb`, `fastboot` and the libimobiledevice
    utilities — and puts you in the `plugdev` group.
 6. Installs the doc tools — `pandoc`, `python3-pil`, `fonts-liberation`,
-   `fonts-dejavu-core` and `git`.
+   `fonts-dejavu-core` and `git` — plus `zip`.
 
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
@@ -147,7 +147,9 @@ with full box-drawing coverage. DejaVu is usually on the machine already, but
 only as one branch of `fontconfig-config`'s dependency, so it is named
 explicitly. `git` is there because the kit's checks are git checks: a cover
 that is not committed is a broken image on dev.to, so `check-article`,
-`preflight` and `publish-devto` all fail without it.
+`preflight` and `publish-devto` all fail without it. `zip` is the exception:
+nothing in the kit needs it, and it is there only so an archive can be packed
+without a trip back to apt.
 
 Debian's `pandoc` rather than the upstream release or the `pypandoc-binary`
 wheel. The wheel works, but it installs a second pandoc under `~/.local` that
@@ -230,8 +232,8 @@ wallpaper and the keybindings are live immediately.
   `Origin: Debian`, so third-party repos such as Chrome's and Docker's are
   left alone. `non-free-firmware` is not touched; the installer has enabled it
   since Debian 12. This is the one stage `bash flex revert` needs `sudo` for.
-- **`pkgs`** — Roboto, the croscore and Noto font sets, gnome-tweaks, unzip,
-  `gh`, `pandoc`, `python3-pil`, `fonts-liberation`, `fonts-dejavu-core` and
+- **`pkgs`** — Roboto, the croscore and Noto font sets, gnome-tweaks, unzip
+  (the shelf's extension download is a zip), zip, `gh`, `pandoc`, `python3-pil`, `fonts-liberation`, `fonts-dejavu-core` and
   `git`, and Chrome if no Chromium-family browser is already installed. Noto
   CJK is 91MB and left out; `FONTS_CJK=1` adds it. The pandoc and Pillow pair
   are the publishing kit's dependencies, listed here for the same reason

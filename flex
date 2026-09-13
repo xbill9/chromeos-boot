@@ -220,7 +220,7 @@ stage_repos() {
 stage_pkgs() {
   log "pkgs: fonts, tweaks and a Chromium-family browser"
   if ! command -v sudo >/dev/null 2>&1 ; then
-    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto fonts-croscore fonts-noto-core gnome-tweaks unzip gh"
+    warn "no sudo -- skipping apt.  Install by hand: fonts-roboto fonts-croscore fonts-noto-core gnome-tweaks unzip zip gh"
     return
   fi
 
@@ -259,8 +259,11 @@ stage_pkgs() {
   # git because the kit's checks are git checks -- check-article, preflight and
   # publish-devto shell out to it -- and a stock desktop install need not have
   # it.
+  # unzip is a hard dependency of stage_shelf, which fetches dash-to-panel as a
+  # zip.  zip is not a dependency of anything; it is a convenience, listed so
+  # an archive can be packed without a trip back to apt.
   sudo apt-get install -y -qq \
-      fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip gh \
+      fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip zip gh \
       fonts-croscore fonts-crosextra-carlito fonts-crosextra-caladea \
       fonts-noto-core \
       pandoc python3-pil fonts-liberation fonts-dejavu-core git \

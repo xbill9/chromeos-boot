@@ -232,6 +232,10 @@ fi
 # is a broken image on dev.to, so check-article, preflight and publish-devto
 # all shell out to it and fail without it.
 #
+# zip is not a kit dependency -- nothing here or in the kit creates an archive.
+# It rides along as a convenience, so a zip can be packed without a trip back
+# to apt.
+#
 # Non-fatal, like the two apt blocks above: a container with no sudo or no
 # network is staged all the same, and re-running stage installs these later.
 apt_doc_tools() {
@@ -239,7 +243,7 @@ apt_doc_tools() {
   # block can be skipped, so the lists may never have been fetched this run.
   sudo apt-get update -qq || return 1
   sudo apt-get install -y -qq \
-    pandoc python3-pil fonts-liberation fonts-dejavu-core git || return 1
+    pandoc python3-pil fonts-liberation fonts-dejavu-core git zip || return 1
 }
 
 log "doc tools: pandoc and Pillow for the publishing kit"

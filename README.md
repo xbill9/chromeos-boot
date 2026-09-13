@@ -83,7 +83,8 @@ Two things then need the steps above to have finished:
    then deletes `~/google-cloud-sdk`.
 5. Installs the phone tools — `adb`, `fastboot` and the libimobiledevice
    utilities — and puts you in the `plugdev` group.
-6. Installs the doc tools — `pandoc`, `python3-pil` and `fonts-liberation`.
+6. Installs the doc tools — `pandoc`, `python3-pil`, `fonts-liberation`,
+   `fonts-dejavu-core` and `git`.
 
 It is idempotent: existing `gcloud` and an active login are detected and
 skipped, so re-run it to repair a half-finished container.
@@ -137,10 +138,16 @@ answer for an iPhone; `lsusb` is the thing to check when neither does.
 
 ### Doc tools
 
-Step 6 installs `pandoc`, `python3-pil` and `fonts-liberation`, which are what
-the publishing kit shells out to: pandoc renders article markdown to HTML,
-Pillow draws the cover image and rasterises every table, and the cover
-generator hardcodes paths into the Liberation faces.
+Step 6 installs `pandoc`, `python3-pil`, `fonts-liberation`,
+`fonts-dejavu-core` and `git`, which are what the publishing kit shells out
+to: pandoc renders article markdown to HTML, Pillow draws the cover image and
+rasterises every table, the cover and table generators hardcode paths into the
+Liberation faces, and diagrams are drawn in DejaVu Sans Mono — the only face
+with full box-drawing coverage. DejaVu is usually on the machine already, but
+only as one branch of `fontconfig-config`'s dependency, so it is named
+explicitly. `git` is there because the kit's checks are git checks: a cover
+that is not committed is a broken image on dev.to, so `check-article`,
+`preflight` and `publish-devto` all fail without it.
 
 Debian's `pandoc` rather than the upstream release or the `pypandoc-binary`
 wheel. The wheel works, but it installs a second pandoc under `~/.local` that

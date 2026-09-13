@@ -220,13 +220,26 @@ fi
 # /usr/share/fonts/truetype/liberation/*.ttf, so without the package it dies
 # on a missing file rather than falling back to a default face.
 #
+# fonts-dejavu-core for the same reason: make-medium.py draws diagrams in
+# DejaVu Sans Mono, the only face with full box-drawing coverage.  It is
+# usually present already, but only as one alternative in fontconfig-config's
+# dependency, and nothing guarantees that is the branch apt picked.
+# fonts-dejavu-core rather than fonts-dejavu-mono, which holds the file on
+# trixie: -core is a metapackage there and the real package on bookworm, so
+# it names the font on either release.
+#
+# git because the kit's checks are git checks -- a cover that is not committed
+# is a broken image on dev.to, so check-article, preflight and publish-devto
+# all shell out to it and fail without it.
+#
 # Non-fatal, like the two apt blocks above: a container with no sudo or no
 # network is staged all the same, and re-running stage installs these later.
 apt_doc_tools() {
   # Repeated for the same reason apt_phone_tools repeats it -- any earlier
   # block can be skipped, so the lists may never have been fetched this run.
   sudo apt-get update -qq || return 1
-  sudo apt-get install -y -qq pandoc python3-pil fonts-liberation || return 1
+  sudo apt-get install -y -qq \
+    pandoc python3-pil fonts-liberation fonts-dejavu-core git || return 1
 }
 
 log "doc tools: pandoc and Pillow for the publishing kit"

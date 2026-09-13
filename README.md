@@ -231,11 +231,13 @@ wallpaper and the keybindings are live immediately.
   left alone. `non-free-firmware` is not touched; the installer has enabled it
   since Debian 12. This is the one stage `bash flex revert` needs `sudo` for.
 - **`pkgs`** — Roboto, the croscore and Noto font sets, gnome-tweaks, unzip,
-  `gh`, `pandoc`, `python3-pil` and `fonts-liberation`, and Chrome if no
-  Chromium-family browser is already installed. Noto CJK is 91MB and left out;
-  `FONTS_CJK=1` adds it. The pandoc and Pillow pair are the publishing kit's
-  dependencies, listed here for the same reason `stage` lists them: the kit
-  runs under the system `python3`, where a `--user` wheel is not visible.
+  `gh`, `pandoc`, `python3-pil`, `fonts-liberation`, `fonts-dejavu-core` and
+  `git`, and Chrome if no Chromium-family browser is already installed. Noto
+  CJK is 91MB and left out; `FONTS_CJK=1` adds it. The pandoc and Pillow pair
+  are the publishing kit's dependencies, listed here for the same reason
+  `stage` lists them: the kit runs under the system `python3`, where a `--user`
+  wheel is not visible. The two fonts are named because the kit loads them by
+  hardcoded path, and `git` because its checks shell out to it.
 - **`theme`** — adw-gtk3, light and dark, from the upstream release tarball
   (trixie has no package for it), so GTK3 apps match the libadwaita GTK4 ones.
   Pinned to `v5.7`, upstream's GNOME 48 / libadwaita 1.7 release — which is

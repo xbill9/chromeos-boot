@@ -251,11 +251,19 @@ stage_pkgs() {
   # would drag it in anyway: the cover generator hardcodes
   # /usr/share/fonts/truetype/liberation/*.ttf, and a hard dependency of this
   # script should not rest on a browser install that the BROWSER check can skip.
+  # fonts-dejavu-core on the same principle: make-medium.py draws diagrams in
+  # DejaVu Sans Mono, the only face with full box-drawing coverage, by
+  # hardcoded path.  It is usually present, but only as one alternative in
+  # fontconfig-config's dependency.  -core rather than -mono because -core
+  # names the font on both bookworm and trixie.
+  # git because the kit's checks are git checks -- check-article, preflight and
+  # publish-devto shell out to it -- and a stock desktop install need not have
+  # it.
   sudo apt-get install -y -qq \
       fonts-roboto fonts-roboto-unhinted gnome-tweaks unzip gh \
       fonts-croscore fonts-crosextra-carlito fonts-crosextra-caladea \
       fonts-noto-core \
-      pandoc python3-pil fonts-liberation \
+      pandoc python3-pil fonts-liberation fonts-dejavu-core git \
       apt-transport-https ca-certificates gnupg \
     || warn "some packages failed -- check the output above"
   if [ "$FONTS_CJK" = 1 ] ; then

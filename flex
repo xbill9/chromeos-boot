@@ -167,19 +167,50 @@ stage_repos() {
     return
   fi
 
+  # Only the components each entry is missing.  A machine whose sources already
+  # name contrib and non-free -- a netinst that ticked them, or one fixed by
+  # hand -- would otherwise get every target twice, and apt warns
+  # "configured multiple times" for each on every update.  What is configured
+  # comes from --no-release-info: with it on, indextargets drops components the
+  # Release file does not carry (trixie-updates often has no contrib), which
+  # would read as missing.  Our own file is excluded, or a second run would see
+  # its entries and conclude there is nothing left to add.
+  have=`apt-get indextargets --no-release-info --format '$(TARGET_OF)|$(REPO_URI)|$(RELEASE)|$(COMPONENT)|$(SOURCESENTRY)' 2>/dev/null |
+        awk -F'|' -v own="$NONFREE_LIST" 'index($5, own ":") != 1 { print $1, $2, $3, $4 }' | sort -u`
+  need=`printf '%s\n' "$src" | while read -r type uri suite ; do
+    miss=
+    for c in $NONFREE_COMPONENTS ; do
+      printf '%s\n' "$have" | grep -qxF "$type $uri $suite $c" || miss="$miss $c"
+    done
+    [ -n "$miss" ] && printf '%s %s %s%s\n' "$type" "$uri" "$suite" "$miss"
+  done`
+
+  if [ -z "$need" ] ; then
+    step "$NONFREE_COMPONENTS already enabled in the distro's sources"
+    if [ -f "$NONFREE_LIST" ] ; then
+      if sudo rm -f "$NONFREE_LIST" ; then
+        step "removed redundant $NONFREE_LIST"
+        sudo apt-get update -qq || warn "apt update failed -- harmless, it retries"
+      else
+        warn "cannot remove redundant $NONFREE_LIST -- \`sudo rm\` it by hand"
+      fi
+    fi
+    return
+  fi
+
   tmp=`mktemp` || { warn "cannot create temp file"; return; }
-  # One stanza per (URI, suite) pair, in sorted order, so an unchanged machine
-  # produces a byte-identical file and the cmp below can skip the update.
-  # deb-src is mirrored only where the machine already has it: a box with no
-  # source entries does not want them appearing for non-free alone.
+  # One stanza per (URI, suite, missing components), in sorted order, so an
+  # unchanged machine produces a byte-identical file and the cmp below can skip
+  # the update.  deb-src is mirrored only where the machine already has it: a
+  # box with no source entries does not want them appearing for non-free alone.
   {
     printf '# Written by `bash flex repos`; removed by `bash flex revert`.\n'
-    printf '# The Debian archives this machine already uses, with the\n'
-    printf '# %s components added.  Edit `flex`, not this file.\n' "$NONFREE_COMPONENTS"
-    printf '%s\n' "$src" | awk '{ print $2, $3 }' | sort -u | while read -r uri suite ; do
-      types=`printf '%s\n' "$src" | awk -v u="$uri" -v s="$suite" '$2 == u && $3 == s { printf " %s", $1 }'`
+    printf '# The Debian archives this machine already uses, with whichever of\n'
+    printf '# %s they lacked added.  Edit `flex`, not this file.\n' "$NONFREE_COMPONENTS"
+    printf '%s\n' "$need" | awk '{ $1 = ""; print substr($0, 2) }' | sort -u | while read -r uri suite comps ; do
+      types=`printf '%s\n' "$need" | awk -v k="$uri $suite $comps" '{ t = $1; $1 = ""; if (substr($0, 2) == k) printf " %s", t }'`
       printf '\nTypes:%s\nURIs: %s\nSuites: %s\nComponents: %s\n' \
-             "$types" "$uri" "$suite" "$NONFREE_COMPONENTS"
+             "$types" "$uri" "$suite" "$comps"
       # Without Signed-By apt falls back to every key in trusted.gpg.d, which
       # is what the legacy one-line entries do; naming the archive keyring
       # matches what trixie's own deb822 file says.

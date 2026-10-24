@@ -398,18 +398,30 @@ stage_icons() {
 # bar -- a dock plus a top panel is two bars, and ChromeOS has one.
 stage_shelf() {
   log "shelf: dash-to-panel"
-  if [ -f "$EXTDIR/metadata.json" ] ; then
-    step "already installed at $EXTDIR"
+  sv=`gnome-shell --version 2>/dev/null | sed 's/[^0-9.]*//; s/\..*//'`
+  [ -n "$sv" ] || sv=48
+  # The guard asks whether the installed build supports the running shell,
+  # not just whether a build is there.  Presence alone survives a distro
+  # upgrade: shell 48 -> 51 left a v73 that stops at 50 on disk, GNOME marked
+  # it OUT OF DATE and loaded nothing, and every re-run skipped the download
+  # -- no shelf, and no way for the stage that installed it to repair it.
+  if python3 -c '
+import json,sys
+sys.exit(0 if sys.argv[2] in json.load(open(sys.argv[1])).get("shell-version",[]) else 1)
+' "$EXTDIR/metadata.json" "$sv" 2>/dev/null ; then
+    step "already installed at $EXTDIR, built for shell $sv"
   else
     command -v unzip >/dev/null 2>&1 || { warn "no unzip -- skipping the shelf"; return; }
-    sv=`gnome-shell --version 2>/dev/null | sed 's/[^0-9.]*//; s/\..*//'`
-    [ -n "$sv" ] || sv=48
+    [ -f "$EXTDIR/metadata.json" ] && step "installed build does not support shell $sv -- replacing it"
     step "resolving a build for GNOME Shell $sv"
     dl=`curl -fsSL "https://extensions.gnome.org/extension-info/?uuid=$D2P&shell_version=$sv" 2>/dev/null \
         | python3 -c 'import json,sys;print(json.load(sys.stdin).get("download_url",""))' 2>/dev/null`
     [ -n "$dl" ] || { warn "extensions.gnome.org has no build for shell $sv -- skipping the shelf"; return; }
     tmp=`mktemp -d` || { warn "cannot create temp dir"; return; }
     if curl -fsSL "https://extensions.gnome.org$dl" -o "$tmp/d2p.zip" ; then
+      # Clear the old build first, as `theme` does: unzipping over it leaves
+      # behind any file the new release dropped.
+      rm -rf "$EXTDIR"
       mkdir -p "$EXTDIR"
       unzip -qo "$tmp/d2p.zip" -d "$EXTDIR" || warn "unzip failed"
       # The SweetTooth zip ships gschemas.compiled, but recompile anyway: a

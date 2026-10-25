@@ -498,6 +498,11 @@ sys.exit(0 if sys.argv[2] in json.load(open(sys.argv[1])).get("shell-version",[]
   # the key is the monitor's EDID vendor and serial (eg "BOE-0x00000000") --
   # machine-specific, so ask Mutter what this machine has rather than baking
   # in the laptop it was written on.
+  # The maps are merged into what is already there rather than replaced: a
+  # monitor with no entry gets dash-to-panel's default layout, icons hard
+  # left, so replacing would forget the HDMI screen every time the script ran
+  # with only the laptop panel attached.  Re-run this stage after plugging in
+  # a new screen to add it.
   ids=`gdbus call --session -d org.gnome.Mutter.DisplayConfig \
           -o /org/gnome/Mutter/DisplayConfig \
           -m org.gnome.Mutter.DisplayConfig.GetCurrentState 2>/dev/null \
@@ -510,9 +515,21 @@ for c,v,p,s in re.findall(r"\(\(\x27([^\x27]*)\x27, \x27([^\x27]*)\x27, \x27([^\
 ' 2>/dev/null`
 
   if [ -n "$ids" ] ; then
+    d2pget() { gsettings --schemadir "$EXTDIR/schemas" get org.gnome.shell.extensions.dash-to-panel "$1" 2>/dev/null; }
+    OLD_POS=`d2pget panel-positions`
+    OLD_SIZE=`d2pget panel-sizes`
+    OLD_ELEM=`d2pget panel-element-positions`
+    export OLD_POS OLD_SIZE OLD_ELEM
     json=`printf '%s\n' "$ids" | python3 -c '
-import json,sys
+import ast,json,os,sys
 ids=[l.strip() for l in sys.stdin if l.strip()]
+def old(var):
+    # gsettings prints a GVariant string, quoted Python-style around the JSON
+    try:
+        d=json.loads(ast.literal_eval(os.environ.get(var,"")))
+        return d if isinstance(d,dict) else {}
+    except Exception:
+        return {}
 elements=[("showAppsButton",True,"stackedTL"),("activitiesButton",False,"stackedTL"),
           ("leftBox",False,"stackedTL"),("taskbar",True,"centerMonitor"),
           ("centerBox",False,"stackedBR"),("rightBox",True,"stackedBR"),
@@ -520,9 +537,9 @@ elements=[("showAppsButton",True,"stackedTL"),("activitiesButton",False,"stacked
           ("desktopButton",False,"stackedBR")]
 layout=[{"element":e,"visible":v,"position":p} for e,v,p in elements]
 enc=lambda d: json.dumps(d,separators=(",",":"))
-print(enc({i:"BOTTOM" for i in ids}))
-print(enc({i:36 for i in ids}))
-print(enc({i:layout for i in ids}))
+print(enc({**old("OLD_POS"),**{i:"BOTTOM" for i in ids}}))
+print(enc({**old("OLD_SIZE"),**{i:36 for i in ids}}))
+print(enc({**old("OLD_ELEM"),**{i:layout for i in ids}}))
 ' 2>/dev/null`
     set -- $json
     if [ $# -eq 3 ] ; then

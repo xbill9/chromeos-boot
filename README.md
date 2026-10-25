@@ -259,7 +259,9 @@ wallpaper and the keybindings are live immediately.
   Mutter's `DisplayConfig` at run time rather than a hardcoded panel ID, so it
   isn't tied to one laptop's monitor — but a monitor this stage has never seen
   falls back to dash-to-panel's own left-stacked default, so plug the second
-  screen in first and re-run `bash flex shelf`. The stage checks that the
+  screen in first and re-run `bash flex shelf`. Each run adds the screens
+  attached at the time and keeps the ones it set up before, so the laptop
+  panel and the external screen stay centred whichever is plugged in. The stage checks that the
   installed build lists the running GNOME Shell version and replaces it when
   it doesn't, so after a distro upgrade moves the shell — which leaves the old
   build marked out of date and the shelf gone — a re-run brings it back.

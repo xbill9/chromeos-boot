@@ -59,7 +59,13 @@ inserting a web app shifts every shortcut after it out by one.
 - `stage` must be run with process substitution — `bash <(curl -sSL ...)`, never
   `curl | bash`. The script would occupy stdin, which `gcloud auth login` needs.
 - `flex` is GNOME + Wayland + gdm3 only. Wayland cannot restart gnome-shell in place, so
-  shelf, themes and app grid changes need a full log out/in; wallpaper and keybindings are live.
+  themes and app grid changes need a full log out/in; wallpaper and keybindings are live. The
+  shelf normally does too, because the running shell caches each extension's version and state
+  at login, but a missing shelf can be loaded live: `gdbus call --session -d
+  org.gnome.Shell.Extensions -o /org/gnome/Shell/Extensions -m
+  org.gnome.Shell.Extensions.InstallRemoteExtension <uuid>`. The user must click Install in the
+  dialog it raises. Confirmed replacing an OUT OF DATE dash-to-panel on GNOME 51, so try this
+  before asking for a logout.
 - `stage_shelf` sets `enabled-extensions` wholesale, which disables any other extension.
 - `flex` depends on upstream layouts that can rot: the pinned `ADW_VERSION`, the Papirus
   master tarball, the extensions.gnome.org API, gstatic icon URLs.
